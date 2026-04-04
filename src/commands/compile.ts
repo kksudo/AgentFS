@@ -173,9 +173,10 @@ export async function compileCommand(args: string[]): Promise<number> {
     context = await buildCompileContext(vaultRoot, dryRun);
   } catch (err) {
     const isNotFound =
-      err instanceof Error &&
+      err !== null &&
+      typeof err === 'object' &&
       'code' in err &&
-      (err as NodeJS.ErrnoException).code === 'ENOENT';
+      (err as any).code === 'ENOENT';
 
     if (isNotFound) {
       printErr(
