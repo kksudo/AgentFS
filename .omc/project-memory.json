@@ -59,8 +59,32 @@
   "hotPaths": [
     {
       "path": "docs/architecture.md",
-      "accessCount": 9,
-      "lastAccessed": 1775326142276,
+      "accessCount": 16,
+      "lastAccessed": 1775333519688,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 10,
+      "lastAccessed": 1775333528480,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 8,
+      "lastAccessed": 1775331241488,
+      "type": "file"
+    },
+    {
+      "path": "src/types/manifest.ts",
+      "accessCount": 8,
+      "lastAccessed": 1775333493681,
+      "type": "file"
+    },
+    {
+      "path": "src/types/index.ts",
+      "accessCount": 7,
+      "lastAccessed": 1775332907183,
       "type": "file"
     },
     {
@@ -70,15 +94,75 @@
       "type": "file"
     },
     {
+      "path": "src/cli.ts",
+      "accessCount": 6,
+      "lastAccessed": 1775333587042,
+      "type": "file"
+    },
+    {
       "path": "docs/bmm-workflow-status.yaml",
       "accessCount": 5,
       "lastAccessed": 1775326909577,
       "type": "file"
     },
     {
+      "path": "_bmad-output/implementation-artifacts/sprint-status.yaml",
+      "accessCount": 5,
+      "lastAccessed": 1775333078296,
+      "type": "file"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/epics-and-stories.md",
+      "accessCount": 5,
+      "lastAccessed": 1775333444019,
+      "type": "file"
+    },
+    {
+      "path": "src/types/setup.ts",
+      "accessCount": 5,
+      "lastAccessed": 1775333482695,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/fhs-mapping.ts",
+      "accessCount": 5,
+      "lastAccessed": 1775333499238,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 5,
+      "lastAccessed": 1775333528686,
+      "type": "file"
+    },
+    {
       "path": "_bmad/core/config.yaml",
       "accessCount": 4,
       "lastAccessed": 1775327192790,
+      "type": "file"
+    },
+    {
+      "path": "src/types/compiler.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775332899987,
+      "type": "file"
+    },
+    {
+      "path": "src/types/memory.ts",
+      "accessCount": 4,
+      "lastAccessed": 1775333518586,
+      "type": "file"
+    },
+    {
+      "path": "jest.config.js",
+      "accessCount": 4,
+      "lastAccessed": 1775333538709,
+      "type": "file"
+    },
+    {
+      "path": "src/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1775331235760,
       "type": "file"
     },
     {
@@ -109,6 +193,30 @@
       "path": "bmad/config.yaml",
       "accessCount": 2,
       "lastAccessed": 1775327232957,
+      "type": "file"
+    },
+    {
+      "path": "src/types/security.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775331194698,
+      "type": "file"
+    },
+    {
+      "path": "src/generators/manifest.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775332193734,
+      "type": "file"
+    },
+    {
+      "path": "tests/types.test.ts",
+      "accessCount": 2,
+      "lastAccessed": 1775333538744,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.test.json",
+      "accessCount": 2,
+      "lastAccessed": 1775333543317,
       "type": "file"
     },
     {
@@ -202,12 +310,6 @@
       "type": "file"
     },
     {
-      "path": "_bmad-output/planning-artifacts/epics-and-stories.md",
-      "accessCount": 1,
-      "lastAccessed": 1775326831351,
-      "type": "file"
-    },
-    {
       "path": "_bmad/bmm/4-implementation/bmad-sprint-planning/workflow.md",
       "accessCount": 1,
       "lastAccessed": 1775327189129,
@@ -223,6 +325,36 @@
       "path": "_bmad/bmm/2-plan-workflows/bmad-create-prd/steps-c/step-12-complete.md",
       "accessCount": 1,
       "lastAccessed": 1775327195843,
+      "type": "file"
+    },
+    {
+      "path": "eslint.config.js",
+      "accessCount": 1,
+      "lastAccessed": 1775330164557,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/skills/scaffold-vault.md",
+      "accessCount": 1,
+      "lastAccessed": 1775331225482,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/skills/run-compile.md",
+      "accessCount": 1,
+      "lastAccessed": 1775331236676,
+      "type": "file"
+    },
+    {
+      "path": "tests/fhs-mapping.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775331279719,
+      "type": "file"
+    },
+    {
+      "path": "src/generators/prompts.ts",
+      "accessCount": 1,
+      "lastAccessed": 1775332024538,
       "type": "file"
     }
   ],
