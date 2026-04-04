@@ -45,3 +45,9 @@ export type {
 } from './memory.js';
 
 export { DEFAULT_CONFIDENCE } from './memory.js';
+
+export type {
+  SetupAnswers,
+  GeneratorResult,
+  ScaffoldResult,
+} from './setup.js';
