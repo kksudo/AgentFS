@@ -70,3 +70,4 @@ agentfs sync
 ## Next Steps
 - Read [AI Manual](ai-manual.md) to understand how the AI Agent itself operates within AgentFS.
 - Read [Architecture](architecture.md) for the internal file structures and principles.
+- Check [AGENTS.md](../AGENTS.md) at your vault root for the active map.

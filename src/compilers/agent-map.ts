@@ -17,11 +17,11 @@ import type { CompileContext, CompileOutput, FhsPaths } from '../types/index.js'
 import { compileTemplate } from './base.js';
 
 /**
- * Render AGENT-MAP.md from the current compile context.
+ * Render AGENTS.md from the current compile context.
  *
  * Reads `templates/compilers/agent-map.md.hbs` relative to this module's
  * location (ESM-safe), compiles it with Handlebars, and returns a single
- * managed CompileOutput at path `AGENT-MAP.md`.
+ * managed CompileOutput at path `AGENTS.md`.
  *
  * The template data is built directly from `context.manifest`, exposing:
  * - `vault`    — name, owner
@@ -32,9 +32,9 @@ import { compileTemplate } from './base.js';
  * - `modules`  — optional active module list
  *
  * @param context - Compile context built by `buildCompileContext`
- * @returns A single CompileOutput for AGENT-MAP.md (managed: true)
+ * @returns A single CompileOutput for AGENTS.md (managed: true)
  */
-export async function generateAgentMap(context: CompileContext): Promise<CompileOutput> {
+export async function generateAgentsFile(context: CompileContext): Promise<CompileOutput> {
   // Resolve template path relative to this file — ESM-safe.
   const templateUrl = new URL(
     '../../templates/compilers/agent-map.md.hbs',
@@ -46,7 +46,7 @@ export async function generateAgentMap(context: CompileContext): Promise<Compile
   const { manifest } = context;
 
   // Build the data object that maps to the template's {{variable}} references.
-  const data: AgentMapTemplateData = {
+  const data: AgentsFileTemplateData = {
     vault: {
       name: manifest.vault.name,
       owner: manifest.vault.owner,
@@ -68,7 +68,7 @@ export async function generateAgentMap(context: CompileContext): Promise<Compile
   const content = template(data);
 
   return {
-    path: 'AGENT-MAP.md',
+    path: 'AGENTS.md',
     content,
     managed: true,
   };
@@ -82,9 +82,9 @@ export async function generateAgentMap(context: CompileContext): Promise<Compile
  * Data object passed to the agent-map.md.hbs template.
  *
  * Kept local to this module — callers only see the public
- * `generateAgentMap` function.
+ * `generateAgentsFile` function.
  */
-interface AgentMapTemplateData {
+interface AgentsFileTemplateData {
   vault: {
     name: string;
     owner: string;

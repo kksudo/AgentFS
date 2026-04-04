@@ -100,7 +100,7 @@ describe('sync system', () => {
 
   describe('detectDrift', () => {
     test('reports missing files', async () => {
-      const results = await detectDrift(tmpVault, ['CLAUDE.md', 'AGENT-MAP.md']);
+      const results = await detectDrift(tmpVault, ['CLAUDE.md', 'AGENTS.md']);
       expect(results).toHaveLength(2);
       expect(results[0].currentHash).toBe('MISSING');
     });

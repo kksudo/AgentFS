@@ -1,18 +1,22 @@
-# AgentFS
+# AgentFS: The OS for AI Agents in Your Vault
 
-> Scaffold your Obsidian vault as a filesystem-based OS for AI agents. Single source of truth, compile-to-native configs, Linux FHS mapping. No frameworks, no databases — just files.
+**AgentFS is a CLI tool that turns your Obsidian vault into a standardized "Operating System" for AI agents.** It provides a single source of truth for your identity, memory, and security, allowing multiple AI agents (Claude, Cursor, OpenClaw) to work in perfect harmony in the same space.
 
-## The Problem
+## 🔴 The Problem: Agent Fragmentation
+Currently, every AI tool is a silo. 
+- **Claude Code** needs `CLAUDE.md`. 
+- **Cursor** needs `.cursorrules`. 
+- **OpenClaw** needs `.omc/project-memory.json`. 
 
-AI agents need an OS, not a framework.
+When you use multiple agents, you have to maintain your rules, identity, and context in three different places. They don't share memory. They don't respect the same security rules. They are strangers in your vault every time you start a new session.
 
-Every AI agent (Claude Code, OpenClaw, Cursor) stores its config in a different format. Claude reads `CLAUDE.md` + `.claude/settings.json`. OpenClaw reads `.omc/project-memory.json`. Cursor reads `.cursorrules`. When you use multiple agents on the same vault, you end up maintaining the same identity, rules, and memory in three different places. When you switch agents, you start from zero.
+## 🟢 The Solution: A Unified Kernel
+AgentFS introduces a **Kernel Space** (`.agentos/`) to your vault. You define who you are and what you remember once, and AgentFS **compiles** that state into native configurations for every agent you use.
 
-There's no persistent memory between sessions. No security policy. No way to say "don't read my secrets." The agent starts every session as a stranger in your own vault.
-
-## The Solution
-
-AgentFS adds a **kernel layer** to your Obsidian vault. A hidden `.agentos/` directory acts as the single source of truth — agent identity, memory, security policy, vault structure — all in plain markdown and YAML. A compile pipeline translates this into whatever native format each agent expects.
+- **One Source of Truth**: Edit your identity in one place; update all agents with one command.
+- **Persistent Memory**: A standardized memory system (Tulving's taxonomy) that agents actually use and update.
+- **AppArmor-Style Security**: Real enforcement that prevents agents from reading your secrets or core system files.
+- **Linux-Style FHS**: A predictable directory structure that agents understand immediately.
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -92,7 +96,7 @@ Write once in `.agentos/`, compile to all native formats:
    settings     project-
                memory.json
 
-         + AGENT-MAP.md (vault router)
+         + AGENTS.md (vault router)
 ```
 
 ```bash
@@ -207,6 +211,7 @@ agentfs sync                          # bidirectional manifest ↔ compiled outp
 - 🤖 **[AI Agent Manual](docs/ai-manual.md)** — Tell your AI to read this file first. Yes, AgentFS is 100% **AI-Native** and provides an explicit instruction manual for the AI itself.
 - 🏛️ **[Architecture Document](docs/architecture.md)** — Full design document (v3, 17 sections).
 - 🔍 **[Competitive Research](docs/competitive-research.md)** — Analysis of 12 existing repos and what we took from them.
+- 🗺️ **[AGENTS.md](AGENTS.md)** — Vault router (generated).
 
 ## Roadmap
 

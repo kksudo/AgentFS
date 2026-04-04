@@ -78,7 +78,7 @@ export async function syncCommand(args: string[]): Promise<number> {
   }
 
   // Default: drift detection
-  const managedFiles = ['CLAUDE.md', 'AGENT-MAP.md'];
+  const managedFiles = ['CLAUDE.md', 'AGENTS.md'];
   const results = await detectDrift(vaultRoot, managedFiles);
 
   print('');

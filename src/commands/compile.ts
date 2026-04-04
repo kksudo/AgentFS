@@ -22,7 +22,7 @@ import { buildCompileContext, writeOutputs } from '../compilers/base.js';
 import { claudeCompiler } from '../compilers/claude.js';
 import { openclawCompiler } from '../compilers/openclaw.js';
 import { cursorCompiler } from '../compilers/cursor.js';
-import { generateAgentMap } from '../compilers/agent-map.js';
+import { generateAgentsFile } from '../compilers/agent-map.js';
 import type { AgentCompiler } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
@@ -236,7 +236,7 @@ export async function compileCommand(args: string[]): Promise<number> {
     // Always regenerate AGENT-MAP.md regardless of target agent.
     // -----------------------------------------------------------------------
 
-    const agentMapOutput = await generateAgentMap(context);
+    const agentMapOutput = await generateAgentsFile(context);
     // AGENT-MAP.md is always managed — no extra guard needed, but we respect
     // the contract anyway for consistency.
     if (agentMapOutput.managed) {

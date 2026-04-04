@@ -3,7 +3,7 @@ import { jest } from '@jest/globals';
 const mockBuildCompileContext = jest.fn<any>();
 const mockWriteOutputs = jest.fn<any>();
 const mockClaudeCompile = jest.fn<any>();
-const mockGenerateAgentMap = jest.fn<any>();
+const mockGenerateAgentsFile = jest.fn<any>();
 
 jest.unstable_mockModule('../src/compilers/base.js', () => ({
   buildCompileContext: mockBuildCompileContext,
@@ -19,7 +19,7 @@ jest.unstable_mockModule('../src/compilers/claude.js', () => ({
 }));
 
 jest.unstable_mockModule('../src/compilers/agent-map.js', () => ({
-  generateAgentMap: mockGenerateAgentMap
+  generateAgentsFile: mockGenerateAgentsFile
 }));
 
 const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation((() => true) as any);
@@ -66,10 +66,6 @@ describe('commands/compile', () => {
 
     const code = await compileCommand(['invalid-agent-name']);
     
-    // We expect it to try and compile "all" agents if positional is invalid? 
-    // Wait, the arg parser filters out "invalid-agent-name" so targetAgent === undefined.
-    // If undefined, it looks at context.manifest.agents.supported.
-    // Since we returned a manifest with an unrecognised runner, it will fail:
     expect(code).toBe(1); 
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('no supported compilers found'));
   });
@@ -94,8 +90,8 @@ describe('commands/compile', () => {
       summary: 'Compiled'
     });
 
-    mockGenerateAgentMap.mockResolvedValueOnce({
-      path: 'AGENT-MAP.md',
+    mockGenerateAgentsFile.mockResolvedValueOnce({
+      path: 'AGENTS.md',
       content: 'map',
       managed: true
     });
@@ -104,8 +100,8 @@ describe('commands/compile', () => {
 
     expect(code).toBe(0);
     expect(mockClaudeCompile).toHaveBeenCalled();
-    expect(mockGenerateAgentMap).toHaveBeenCalled();
-    expect(mockWriteOutputs).toHaveBeenCalledTimes(2); // once for claude, once for agent-map
+    expect(mockGenerateAgentsFile).toHaveBeenCalled();
+    expect(mockWriteOutputs).toHaveBeenCalledTimes(2); // once for claude, once for AGENTS.md
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('AgentFS compile complete'));
   });
 
@@ -124,8 +120,8 @@ describe('commands/compile', () => {
       summary: 'Compiled'
     });
 
-    mockGenerateAgentMap.mockResolvedValueOnce({
-      path: 'AGENT-MAP.md',
+    mockGenerateAgentsFile.mockResolvedValueOnce({
+      path: 'AGENTS.md',
       content: 'map',
       managed: true
     });
