@@ -31,12 +31,12 @@ import type { SemanticEntry, SemanticEntryType, EntryStatus } from '../types/ind
  * Matches any recognised semantic entry line.
  *
  * Capture groups:
- *   1 — entry type  (PREF | FACT | PATTERN | AVOID)
+ *   1 — entry type  (PREF | FACT | PATTERN | AVOID | DIRECTIVE)
  *   2 — optional bracketed modifier, without the brackets
  *   3 — content text (trimmed)
  */
 const ENTRY_RE =
-  /^(PREF|FACT|PATTERN|AVOID):\s+(?:\[([^\]]+)\]\s+)?(.+)$/;
+  /^(PREF|FACT|PATTERN|AVOID|DIRECTIVE):\s+(?:\[([^\]]+)\]\s+)?(.+)$/;
 
 // ---------------------------------------------------------------------------
 // parseSemanticMemory
@@ -139,8 +139,8 @@ export function serializeSemanticEntry(entry: SemanticEntry): string {
     return `PATTERN: [confidence:${score.toFixed(2)}] ${content}`;
   }
 
-  // PREF and AVOID have no modifier when status is active.
-  if (type === 'PREF' || type === 'AVOID') {
+  // PREF, AVOID, and DIRECTIVE have no modifier when status is active.
+  if (type === 'PREF' || type === 'AVOID' || type === 'DIRECTIVE') {
     return `${type}: ${content}`;
   }
 

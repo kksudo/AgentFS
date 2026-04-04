@@ -110,6 +110,22 @@ export function slugify(name: string): string {
 function renderProceduralEntry(entry: ProceduralEntry): string {
   const lines: string[] = [];
 
+  // YAML frontmatter with triggers and metadata (SKILL.md pattern)
+  lines.push('---');
+  lines.push(`name: ${entry.name}`);
+  lines.push(`description: ${entry.description}`);
+  if (entry.triggers && entry.triggers.length > 0) {
+    lines.push(`triggers: [${entry.triggers.join(', ')}]`);
+  }
+  if (entry.useCount !== undefined) {
+    lines.push(`use_count: ${entry.useCount}`);
+  }
+  if (entry.lastUsed) {
+    lines.push(`last_used: ${entry.lastUsed}`);
+  }
+  lines.push('---');
+  lines.push('');
+
   lines.push(`# ${entry.name}`);
   lines.push('');
   lines.push(entry.description);

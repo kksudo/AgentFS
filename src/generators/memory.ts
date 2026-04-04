@@ -41,6 +41,9 @@ const SEMANTIC_CONTENT = `# Semantic Memory
 
 ## Avoids
 <!-- AVOID: entries go here -->
+
+## Directives
+<!-- DIRECTIVE: imperative rules that must always be followed -->
 `;
 
 /**

@@ -9,8 +9,16 @@
  * @see docs/architecture.md Section 4 "Boot Sequence"
  */
 
-/** Semantic memory entry types. */
-export type SemanticEntryType = 'PREF' | 'FACT' | 'PATTERN' | 'AVOID';
+/**
+ * Semantic memory entry types.
+ *
+ * - PREF: preferences ("no emoji in headings")
+ * - FACT: declarative facts ("[active] primary stack is K8s")
+ * - PATTERN: behavioral patterns with confidence ("[confidence:0.85] ...")
+ * - AVOID: anti-patterns ("don't suggest LangChain")
+ * - DIRECTIVE: imperative rules that must always be followed ("always run tests before commit")
+ */
+export type SemanticEntryType = 'PREF' | 'FACT' | 'PATTERN' | 'AVOID' | 'DIRECTIVE';
 
 /** Status of a semantic entry. */
 export type EntryStatus = 'active' | `superseded:${string}`;
@@ -70,10 +78,21 @@ export interface EpisodicEntry {
   lessons: string[];
 }
 
-/** Procedural memory — a learned skill/workflow. */
+/**
+ * Procedural memory — a learned skill/workflow.
+ *
+ * Follows SKILL.md pattern: frontmatter with triggers + description,
+ * body with steps and context. Agents can auto-match skills by trigger keywords.
+ */
 export interface ProceduralEntry {
   name: string;
   description: string;
   steps: string[];
   context: string;
+  /** Keywords that trigger this skill (e.g. ["deploy", "kubernetes", "rollout"]) */
+  triggers?: string[];
+  /** How often this skill was used (for distillation ranking) */
+  useCount?: number;
+  /** When this skill was last used (ISO date) */
+  lastUsed?: string;
 }
