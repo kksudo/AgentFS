@@ -200,11 +200,13 @@ agentfs onboard                       # agent-led interview → identity + memor
 agentfs sync                          # bidirectional manifest ↔ compiled outputs
 ```
 
-## Status
-
 **Release v0.1.0** — Core architecture and all planned epics are fully implemented. 
 
-See [docs/architecture.md](docs/architecture.md) for the full design document (v3, 17 sections).
+### Core Documentation
+- 🚀 **[Quick Start Guide](docs/quickstart.md)** — Go here if you are a human.
+- 🤖 **[AI Agent Manual](docs/ai-manual.md)** — Tell your AI to read this file first. Yes, AgentFS is 100% **AI-Native** and provides an explicit instruction manual for the AI itself.
+- 🏛️ **[Architecture Document](docs/architecture.md)** — Full design document (v3, 17 sections).
+- 🔍 **[Competitive Research](docs/competitive-research.md)** — Analysis of 12 existing repos and what we took from them.
 
 ## Roadmap
 
