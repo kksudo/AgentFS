@@ -39,6 +39,7 @@ import { cronCommand } from './commands/cron.js';
 import { securityCommand } from './commands/security.js';
 import { secretCommand } from './commands/secret.js';
 import { importCommand, syncCommand } from './commands/sync.js';
+import { doctorCommand, triageCommand, migrateCommand } from './commands/doctor.js';
 import { runSetupPrompts, createDefaultAnswers } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
 import type { Profile } from './types/index.js';
@@ -264,6 +265,9 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     if (subcommand === 'secret') return secretCommand(subArgs);
     if (subcommand === 'import') return importCommand(subArgs);
     if (subcommand === 'sync') return syncCommand(subArgs);
+    if (subcommand === 'doctor') return doctorCommand(subArgs);
+    if (subcommand === 'triage') return triageCommand(subArgs);
+    if (subcommand === 'migrate') return migrateCommand(subArgs);
     printStub(subcommand);
     return 0;
   }
