@@ -20,23 +20,20 @@ import path from 'node:path';
 import type { AgentRuntime, CompileOutput, CompileResult } from '../types/index.js';
 import { buildCompileContext, writeOutputs } from '../compilers/base.js';
 import { claudeCompiler } from '../compilers/claude.js';
+import { openclawCompiler } from '../compilers/openclaw.js';
+import { cursorCompiler } from '../compilers/cursor.js';
 import { generateAgentMap } from '../compilers/agent-map.js';
 import type { AgentCompiler } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Registry of all known compilers.
-// Add new compilers here as additional agent runtimes are implemented.
 // ---------------------------------------------------------------------------
 
 /** All compiler drivers supported by this release. */
 const COMPILER_REGISTRY: Record<AgentRuntime, AgentCompiler> = {
   claude: claudeCompiler,
-  // openclaw and cursor compilers will be added in a future phase.
-  // Providing placeholder stubs here so TypeScript's exhaustiveness check
-  // across the AgentRuntime union is satisfied at the type level — the
-  // runtime guard below prevents them from being invoked.
-  openclaw: claudeCompiler, // TODO: replace with openclawCompiler
-  cursor: claudeCompiler,   // TODO: replace with cursorCompiler
+  openclaw: openclawCompiler,
+  cursor: cursorCompiler,
 };
 
 // ---------------------------------------------------------------------------
