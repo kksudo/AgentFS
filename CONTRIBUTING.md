@@ -12,10 +12,18 @@ Thank you for your interest in contributing to **AgentFS**! This document provid
 
 ## Core Philosophy
 
-AgentFS is built on the **BMAD** methodology (Base → Memory → Actions → Decisions). We treat the filesystem as the definitive kernel and database for AI agents. 
-- Avoid external dependencies whenever possible — keep the core CLI zero-dependency or as small as possible.
-- Files should be human-readable and standard Markdown/YAML so that both humans and agents can interact with them directly.
-- Canonical state lives in the user's vault (`.agentos/`); agents read from it and tools compile it.
+AgentFS is built on **Unix philosophy adapted for AI agents** (see `docs/architecture.md`, Section 0):
+
+1. **Everything is a file.** Memory, tasks, skills, configs — markdown. No databases.
+2. **Do one thing well.** Each file has one responsibility.
+3. **Programs work together.** Frontmatter is the API contract. Wikilinks are pipes.
+4. **Text is the universal interface.** Markdown: human-readable, agent-parseable, Obsidian-renderable.
+5. **No captive UI.** The vault works without Obsidian, without any agent, without cloud.
+
+Key constraints:
+- Avoid external dependencies whenever possible — keep the core CLI lean.
+- Files must be human-readable standard Markdown/YAML — both humans and agents interact with them directly.
+- Canonical state lives in `.agentos/`; agents read from it, tools compile it into native formats.
 
 ## Development Setup
 

@@ -52,9 +52,8 @@ yarn-error.log*
 .omc/telemetry/
 
 # Agent Configs (Compiled dynamically)
-# Note: CLAUDE.md in the repo root IS tracked (project instructions).
-# We ignore generated configs from testing/scaffolding:
-.cursorrules
+# Note: CLAUDE.md, AGENTS.md, .cursorrules in repo root ARE tracked (project instructions).
+# We ignore generated configs from testing/scaffolding in vault output:
 
 # OS / Temporary
 .AppleDouble

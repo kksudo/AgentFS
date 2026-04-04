@@ -6,34 +6,47 @@ This file contains instructions for AI agents (Claude Code, Cursor, OpenClaw, et
 
 AgentFS is a CLI tool (`npx create-agentfs`) that scaffolds an Obsidian vault as a filesystem-based operating system for AI agents. The core concept: a `.agentos/` kernel space serves as single source of truth and compiles into native agent config formats.
 
-**Status:** Phase 2 — Implementation (Epic 1: Project Bootstrap). Architecture document is in `docs/architecture.md`.
+**Status:** v0.1.0 — All 13 epics implemented (Phases 1–11 complete). See `docs/architecture.md` for the full spec.
 
 ## Repository Structure
 
 ```
 AgentFS/
+├── AGENTS.md                    ← This file (agent instructions for all runtimes)
+├── CLAUDE.md                    ← Includes @AGENTS.md (Claude Code entry point)
+├── .cursorrules                 ← Cursor agent entry point (includes this file)
 ├── README.md                    ← Project overview and roadmap
-├── CLAUDE.md                    ← This file (agent instructions)
 ├── CONTRIBUTING.md              ← Contribution guidelines
 ├── LICENSE                      ← MIT license
-├── package.json                 ← Node.js package manifest
-├── tsconfig.json                ← TypeScript compiler config
+├── package.json                 ← create-agentfs (Node.js 18+, ESM)
+├── tsconfig.json                ← TypeScript strict, ES2022, NodeNext
+├── tsconfig.test.json           ← Extends tsconfig for Jest + ESM
+├── jest.config.js               ← Jest with ts-jest ESM preset
+├── eslint.config.js             ← ESLint flat config with @typescript-eslint
 ├── docs/
-│   ├── architecture.md          ← Full architecture spec (v3) — THE source of truth
+│   ├── architecture.md          ← Full architecture spec (v3, 17 sections) — THE source of truth
 │   ├── competitive-research.md  ← Analysis of 12 existing repos
-│   └── metrics/                 ← Migration metrics and baseline data
+│   ├── quickstart.md            ← Human quick start guide
+│   └── ai-manual.md             ← AI agent manual for vault interaction
 ├── src/
-│   ├── cli.ts                   ← CLI entry point
-│   ├── types/                   ← Core TypeScript interfaces (Manifest, AgentCompiler, SecurityPolicy, Memory)
-│   ├── utils/                   ← Utilities (fhs-mapping, etc.)
-│   ├── compilers/               ← compile.d/ drivers (one per agent runtime)
-│   ├── generators/              ← Scaffold generators
-│   ├── commands/                ← CLI subcommands
-│   ├── security/                ← Security subsystem
-│   └── modules/                 ← Optional modules
-├── templates/                   ← Handlebars templates (future)
-├── tests/                       ← Jest tests
-└── .gitignore
+│   ├── cli.ts                   ← CLI entry point (subcommand router)
+│   ├── index.ts                 ← Public API barrel (re-exports main, VERSION)
+│   ├── types/                   ← Core interfaces (Manifest, AgentCompiler, SecurityPolicy, Memory, Setup)
+│   ├── utils/                   ← Utilities (fhs-mapping)
+│   ├── generators/              ← Scaffold generators (filesystem, manifest, init, ignore, memory, prompts)
+│   ├── compilers/               ← Compile drivers (base, claude, openclaw, cursor, agent-map)
+│   ├── commands/                ← CLI subcommands (compile, onboard)
+│   ├── memory/                  ← Memory system (parser, confidence, episodic, procedural)
+│   ├── security/                ← Security subsystem (policy parser, AppArmor profiles)
+│   ├── secrets/                 ← Secrets management (SOPS/age, exfil guard)
+│   ├── cron/                    ← Cron jobs (consolidation, distillation, triage, heartbeat)
+│   ├── sync/                    ← Sync & import (memory sync, drift detection)
+│   ├── profiles/                ← Profile generators (personal, company, shared)
+│   └── modules/                 ← Optional modules (career, content, engineering)
+├── templates/
+│   └── compilers/               ← Handlebars templates (claude.md.hbs, agent-map.md.hbs)
+├── tests/                       ← Jest tests (261+ tests across 18 suites)
+└── _bmad/                       ← BMAD Method tooling (skills, planning artifacts)
 ```
 
 ## Key Architecture Concepts
@@ -46,11 +59,27 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
 4. **AppArmor-style security:** policy.yaml → real enforcement via native agent permissions
 5. **Boot sequence:** SysVinit runlevels 0-6 with progressive disclosure
 
+## Technical Context
+
+### Runtime
+- **Node.js >= 18.0.0** required (`engines` field in package.json)
+- **ESM modules** — `"type": "module"` in package.json. All imports must use `.js` extensions:
+  ```typescript
+  import { readManifest } from '../compilers/base.js';  // correct
+  import { readManifest } from '../compilers/base';     // WRONG — will fail at runtime
+  ```
+- **TypeScript strict mode** with `NodeNext` module resolution
+
+### Testing
+- **Jest in ESM mode** — requires `--experimental-vm-modules` flag (already configured in package.json `test` script)
+- **Separate tsconfig** for tests: `tsconfig.test.json` adds `"types": ["jest"]` and `"isolatedModules": true`
+- Test files go in `tests/` directory, not alongside source
+
 ## Development Rules
 
 ### Code Style
 - Language: TypeScript (strict mode)
-- Runtime: Node.js (npx compatible)
+- Runtime: Node.js 18+ (npx compatible, ESM)
 - Template engine: Handlebars (.hbs)
 - Config format: YAML (manifest, policy) + Markdown (init.d/, memory/)
 - Naming: kebab-case for files, camelCase for variables, PascalCase for classes
@@ -61,6 +90,7 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
 - **Agent is replaceable.** Never couple to a specific agent runtime
 - **Idempotent.** `create-agentfs` on existing vault = safe. Never overwrite user files
 - **Compile, don't symlink.** Each agent needs its own native format — compile from source of truth
+- **Use existing standards.** Follow formats from `docs/architecture.md` exactly. Don't invent new conventions.
 
 ### Commit Convention
 - Format: `type(scope): description`
@@ -76,26 +106,29 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
 - Description includes: what changed, why, how to test
 - Architecture changes require update to `docs/architecture.md`
 
-## How to Set Up This Project
-
-```bash
-# Clone
-git clone https://github.com/<owner>/AgentFS.git
-cd AgentFS
-
-# Install dependencies
-npm install
-```
-
 ## How to Develop
 
 ```bash
-npm install          # install dependencies
-npm run build        # compile TypeScript
-npm run dev          # watch mode
-npm test             # run Jest tests
-npm run lint         # eslint
-npm run typecheck    # type check without emitting
+# Setup
+npm install              # install dependencies
+
+# Build & run
+npm run build            # compile TypeScript → dist/
+npm run dev              # watch mode (auto-recompile)
+npm run start            # run CLI: node dist/cli.js
+
+# Test locally
+npm link                 # register as global CLI
+agentfs --help           # verify CLI works
+agentfs compile --dry-run # test compile pipeline
+node dist/cli.js --help  # alternative without npm link
+
+# Quality
+npm test                 # run Jest tests (261+ tests)
+npm run test:watch       # watch mode for tests
+npm run lint             # eslint
+npm run lint:fix         # eslint with auto-fix
+npm run typecheck        # type check without emitting
 ```
 
 ## Architecture Document Navigation
@@ -123,9 +156,16 @@ The main spec (`docs/architecture.md`) has 17 sections:
 | 16 | Open questions |
 | 17 | Roadmap (11 phases) |
 
+## Additional Resources
+
+- **[docs/ai-manual.md](docs/ai-manual.md)** — Detailed AI agent manual for vault interaction
+- **[docs/quickstart.md](docs/quickstart.md)** — Human quick start guide
+
 ## What NOT to Do
 
 - Do NOT add personal data (names, emails, API keys, vault paths) to any file
 - Do NOT create Obsidian-specific plugins — AgentFS is agent-agnostic and editor-agnostic
 - Do NOT add dependencies without justification in architecture doc
 - Do NOT use LangChain, LlamaIndex, or any agent framework — this is a filesystem tool
+- Do NOT use CommonJS (`require()`) — this is an ESM project, use `import`
+- Do NOT create `.ts` test files alongside source — all tests go in `tests/`
