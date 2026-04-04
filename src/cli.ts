@@ -36,6 +36,7 @@ import { compileCommand } from './commands/compile.js';
 import { onboardCommand } from './commands/onboard.js';
 import { memoryCommand } from './commands/memory.js';
 import { cronCommand } from './commands/cron.js';
+import { securityCommand } from './commands/security.js';
 import { runSetupPrompts, createDefaultAnswers } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
 import type { Profile } from './types/index.js';
@@ -255,6 +256,7 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     if (subcommand === 'onboard') return onboardCommand(subArgs);
     if (subcommand === 'memory') return memoryCommand(subArgs);
     if (subcommand === 'cron') return cronCommand(subArgs);
+    if (subcommand === 'security') return securityCommand(subArgs);
     printStub(subcommand);
     return 0;
   }
