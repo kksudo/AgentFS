@@ -218,6 +218,17 @@ describe('security system', () => {
       expect(code).toBe(0);
     });
 
+    test('add simulates npm package installation', async () => {
+      const code = await securityCommand(['add', 'agentfs-security-docker']);
+      expect(code).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Simulating installation of npm package: agentfs-security-docker...'));
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Installed and merged community module: agentfs-security-docker'));
+
+      const codeList = await securityCommand(['list']);
+      expect(codeList).toBe(0);
+      expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('docker'));
+    });
+
     test('list with no modules', async () => {
       const code = await securityCommand(['list']);
       expect(code).toBe(0);

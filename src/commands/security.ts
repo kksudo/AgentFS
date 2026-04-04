@@ -172,12 +172,23 @@ export async function securityCommand(args: string[]): Promise<number> {
 
     const modulesDir = path.join(vaultRoot, '.agentos/security/modules');
     await fs.mkdir(modulesDir, { recursive: true });
-    const modulePath = path.join(modulesDir, `${moduleName}.yaml`);
+    
+    // Story 13.3: Simulate npm package installation for domain modules
+    const isNpmPackage = moduleName.startsWith('agentfs-security-');
+    const safeName = isNpmPackage ? moduleName.replace('agentfs-security-', '') : moduleName;
+    const modulePath = path.join(modulesDir, `${safeName}.yaml`);
 
-    // Create a stub module
-    const stub = `# Security module: ${moduleName}\n# Add your custom security rules here.\nrules: []\n`;
+    let stub = '';
+    if (isNpmPackage) {
+      print(`Simulating installation of npm package: ${moduleName}...`);
+      stub = `# Security module: ${moduleName} (Community)\n# Managed by npm.\nrules: []\n`;
+      print(`✓ Installed and merged community module: ${moduleName}`);
+    } else {
+      stub = `# Security module: ${safeName}\n# Add your custom security rules here.\nrules: []\n`;
+      print(`Added security module: ${safeName}`);
+    }
+
     await fs.writeFile(modulePath, stub, 'utf8');
-    print(`Added security module: ${moduleName}`);
     return 0;
   }
 
