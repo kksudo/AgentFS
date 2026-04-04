@@ -32,12 +32,20 @@ void (0 as unknown as Manifest);
 void (0 as unknown as AgentCompiler);
 void (0 as unknown as SecurityPolicy);
 
+import { compileCommand } from './commands/compile.js';
+import { onboardCommand } from './commands/onboard.js';
+import { memoryCommand } from './commands/memory.js';
+import { runSetupPrompts, createDefaultAnswers } from './generators/prompts.js';
+import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
+import type { Profile } from './types/index.js';
+
 /** CLI version — kept in sync with package.json by convention. */
 export const VERSION = '0.1.0';
 
 /**
  * All subcommands recognised by the CLI.
  *
+ * - `init`     — scaffold a new AgentFS vault (same as create-agentfs)
  * - `compile`  — compile .agentos/ kernel into native agent configs
  * - `onboard`  — interactive first-run wizard (create-agentfs flow)
  * - `memory`   — inspect / edit Tulving memory layers
@@ -107,10 +115,49 @@ function printWelcome(): void {
   print(`AgentFS v${VERSION}`);
   print('Scaffold your Obsidian vault as a filesystem-based OS for AI agents.');
   print('');
-  print('Scaffolding not yet implemented');
-  print('');
-  print('Run `agentfs --help` once Phase 2 is released.');
-  print('');
+}
+
+/** Parses flags for the scaffold command. */
+async function runScaffold(args: string[]): Promise<number> {
+  printWelcome();
+
+  let targetDir: string | undefined;
+  let profile: string | undefined;
+  let nonInteractive = false;
+
+  // Simple ad-hoc parser
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--output' || arg === '-o') {
+      targetDir = args[++i];
+    } else if (arg === '--profile' || arg === '-p') {
+      profile = args[++i];
+    } else if (arg === '--non-interactive') {
+      nonInteractive = true;
+    } else if (!arg.startsWith('-') && !targetDir) {
+      // Positional target directory
+      targetDir = arg;
+    }
+  }
+
+  let answers;
+  if (nonInteractive) {
+    answers = createDefaultAnswers({
+      targetDir: targetDir ?? process.cwd(),
+      profile: (profile as Profile) ?? 'personal',
+    });
+  } else {
+    answers = await runSetupPrompts(targetDir);
+  }
+
+  try {
+    const result = await scaffold(answers);
+    print(formatScaffoldSummary(result));
+    return 0;
+  } catch (err) {
+    printErr(`Scaffolding failed: ${err instanceof Error ? err.message : String(err)}`);
+    return 1;
+  }
 }
 
 /** Printed when an unknown subcommand is supplied. */
@@ -119,10 +166,16 @@ function printUsage(): void {
   print(`agentfs v${VERSION} — filesystem-based OS for AI agents`);
   print('');
   print('Usage:');
-  print('  npx create-agentfs               Scaffold a new AgentFS vault');
-  print('  agentfs <subcommand> [options]   Run a post-init command');
+  print('  npx create-agentfs [dir] [opts]  Scaffold a new AgentFS vault');
+  print('  agentfs <subcommand> [opts]      Run a post-init command');
+  print('');
+  print('Scaffold Options:');
+  print('  --output, -o <dir>         Target directory');
+  print('  --profile, -p <name>       Vault profile (personal/company/shared)');
+  print('  --non-interactive          Bypass prompts and use default values');
   print('');
   print('Subcommands:');
+  print('  init       Alias for npx create-agentfs');
   print('  compile    Compile .agentos/ kernel into native agent configs');
   print('  onboard    Interactive first-run setup wizard');
   print('  memory     Inspect and edit Tulving memory layers');
@@ -169,13 +222,7 @@ export async function main(argv: string[] = process.argv): Promise<number> {
   const args = argv.slice(2);
   const subcommand = args[0];
 
-  // No arguments → welcome message (the `npx create-agentfs` case).
-  if (subcommand === undefined) {
-    printWelcome();
-    return 0;
-  }
-
-  // Help flags — delegate to usage.
+  // Help flags — delegate to usage first (can be used with no subcommands).
   if (subcommand === '--help' || subcommand === '-h' || subcommand === 'help') {
     printUsage();
     return 0;
@@ -187,8 +234,23 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     return 0;
   }
 
-  // Known subcommand → stub response.
+  const binName = argv[1] ? import('node:path').then(p => p.basename(argv[1])) : 'agentfs';
+  const isCreateBin = argv[1] && (argv[1].endsWith('create-agentfs') || argv[1].endsWith('create-agentfs.js'));
+
+  // If no arguments or the command starts with a flag (like npx create-agentfs --non-interactive)
+  // or it is explicitly "init", run the scaffolder.
+  if (subcommand === undefined || subcommand.startsWith('-') || subcommand === 'init' || (isCreateBin && !isSubcommand(subcommand))) {
+    // If it's pure "init", slice it out so we just parse the trailing args.
+    const scaffoldArgs = subcommand === 'init' ? args.slice(1) : args;
+    return runScaffold(scaffoldArgs);
+  }
+
+  // Known subcommand — dispatch to implemented handlers, stub the rest.
   if (isSubcommand(subcommand)) {
+    const subArgs = args.slice(1);
+    if (subcommand === 'compile') return compileCommand(subArgs);
+    if (subcommand === 'onboard') return onboardCommand(subArgs);
+    if (subcommand === 'memory') return memoryCommand(subArgs);
     printStub(subcommand);
     return 0;
   }
