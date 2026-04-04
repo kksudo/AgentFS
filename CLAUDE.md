@@ -6,7 +6,7 @@ This file contains instructions for AI agents (Claude Code, Cursor, OpenClaw, et
 
 AgentFS is a CLI tool (`npx create-agentfs`) that scaffolds an Obsidian vault as a filesystem-based operating system for AI agents. The core concept: a `.agentos/` kernel space serves as single source of truth and compiles into native agent config formats.
 
-**Status:** Phase 1 — Specification. No implementation code yet. Architecture document is in `docs/architecture.md`.
+**Status:** Phase 2 — Implementation (Epic 1: Project Bootstrap). Architecture document is in `docs/architecture.md`.
 
 ## Repository Structure
 
@@ -16,10 +16,23 @@ AgentFS/
 ├── CLAUDE.md                    ← This file (agent instructions)
 ├── CONTRIBUTING.md              ← Contribution guidelines
 ├── LICENSE                      ← MIT license
+├── package.json                 ← Node.js package manifest
+├── tsconfig.json                ← TypeScript compiler config
 ├── docs/
 │   ├── architecture.md          ← Full architecture spec (v3) — THE source of truth
 │   ├── competitive-research.md  ← Analysis of 12 existing repos
 │   └── metrics/                 ← Migration metrics and baseline data
+├── src/
+│   ├── cli.ts                   ← CLI entry point
+│   ├── types/                   ← Core TypeScript interfaces (Manifest, AgentCompiler, SecurityPolicy, Memory)
+│   ├── utils/                   ← Utilities (fhs-mapping, etc.)
+│   ├── compilers/               ← compile.d/ drivers (one per agent runtime)
+│   ├── generators/              ← Scaffold generators
+│   ├── commands/                ← CLI subcommands
+│   ├── security/                ← Security subsystem
+│   └── modules/                 ← Optional modules
+├── templates/                   ← Handlebars templates (future)
+├── tests/                       ← Jest tests
 └── .gitignore
 ```
 
@@ -35,7 +48,7 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
 
 ## Development Rules
 
-### Code Style (when implementation starts)
+### Code Style
 - Language: TypeScript (strict mode)
 - Runtime: Node.js (npx compatible)
 - Template engine: Handlebars (.hbs)
@@ -70,15 +83,19 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
 git clone https://github.com/<owner>/AgentFS.git
 cd AgentFS
 
-# When implementation starts (Phase 2):
-npm init -y
-npm install typescript @types/node handlebars js-yaml inquirer
-npx tsc --init --strict --target ES2022 --module NodeNext
+# Install dependencies
+npm install
+```
 
-# Project structure (Phase 2):
-mkdir -p src/{cli,profiles,generators,compilers,security,commands,modules,utils}
-mkdir -p templates/{compilers,init.d,cron.d,user-templates,security-modules}
-mkdir -p tests
+## How to Develop
+
+```bash
+npm install          # install dependencies
+npm run build        # compile TypeScript
+npm run dev          # watch mode
+npm test             # run Jest tests
+npm run lint         # eslint
+npm run typecheck    # type check without emitting
 ```
 
 ## Architecture Document Navigation
@@ -109,7 +126,6 @@ The main spec (`docs/architecture.md`) has 17 sections:
 ## What NOT to Do
 
 - Do NOT add personal data (names, emails, API keys, vault paths) to any file
-- Do NOT implement code before architecture is approved (Phase 1 = docs only)
 - Do NOT create Obsidian-specific plugins — AgentFS is agent-agnostic and editor-agnostic
 - Do NOT add dependencies without justification in architecture doc
 - Do NOT use LangChain, LlamaIndex, or any agent framework — this is a filesystem tool
