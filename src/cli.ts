@@ -37,6 +37,7 @@ import { onboardCommand } from './commands/onboard.js';
 import { memoryCommand } from './commands/memory.js';
 import { cronCommand } from './commands/cron.js';
 import { securityCommand } from './commands/security.js';
+import { secretCommand } from './commands/secret.js';
 import { runSetupPrompts, createDefaultAnswers } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
 import type { Profile } from './types/index.js';
@@ -66,6 +67,7 @@ export type Subcommand =
   | 'memory'
   | 'cron'
   | 'security'
+  | 'secret'
   | 'doctor'
   | 'triage'
   | 'migrate'
@@ -81,6 +83,7 @@ const KNOWN_SUBCOMMANDS = new Set<string>([
   'memory',
   'cron',
   'security',
+  'secret',
   'doctor',
   'triage',
   'migrate',
@@ -257,6 +260,7 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     if (subcommand === 'memory') return memoryCommand(subArgs);
     if (subcommand === 'cron') return cronCommand(subArgs);
     if (subcommand === 'security') return securityCommand(subArgs);
+    if (subcommand === 'secret') return secretCommand(subArgs);
     printStub(subcommand);
     return 0;
   }
