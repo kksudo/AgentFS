@@ -38,6 +38,7 @@ import { memoryCommand } from './commands/memory.js';
 import { cronCommand } from './commands/cron.js';
 import { securityCommand } from './commands/security.js';
 import { secretCommand } from './commands/secret.js';
+import { importCommand, syncCommand } from './commands/sync.js';
 import { runSetupPrompts, createDefaultAnswers } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
 import type { Profile } from './types/index.js';
@@ -261,6 +262,8 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     if (subcommand === 'cron') return cronCommand(subArgs);
     if (subcommand === 'security') return securityCommand(subArgs);
     if (subcommand === 'secret') return secretCommand(subArgs);
+    if (subcommand === 'import') return importCommand(subArgs);
+    if (subcommand === 'sync') return syncCommand(subArgs);
     printStub(subcommand);
     return 0;
   }
