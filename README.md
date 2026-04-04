@@ -202,34 +202,29 @@ agentfs sync                          # bidirectional manifest ↔ compiled outp
 
 ## Status
 
-**Phase 1: Specification** — architecture document is complete, implementation hasn't started.
+**Release v0.1.0** — Core architecture and all planned epics are fully implemented. 
 
 See [docs/architecture.md](docs/architecture.md) for the full design document (v3, 17 sections).
 
-See [docs/competitive-research.md](docs/competitive-research.md) for analysis of 12 existing repos and what we took from them.
-
 ## Roadmap
 
-```
-Phase 1:    Spec → review → approve                              ← CURRENT
-Phase 2:    MVP — npx create-agentfs: personal + compile.d/claude
-Phase 2.5:  Onboard — agent-led interview
-Phase 3:    Memory — Tulving taxonomy + confidence scoring
-Phase 4:    Cron — consolidation + distillation + inbox-triage
-Phase 5:    Security — policy.yaml + AppArmor + input validation
-Phase 6:    Secrets — SOPS/age + exec --with-secrets
-Phase 7:    Sync — bidirectional manifest ↔ CLAUDE.md
-Phase 8:    compile.d/openclaw + memory sync
-Phase 9:    Company + Shared profiles
-Phase 10:   Full CLI (doctor + agnix, triage, migrate)
-Phase 11:   Community — npm publish, contributing guide
-```
+All phases (1 through 11) have been successfully completed:
+- ✅ Phase 1:    Spec → review → approve
+- ✅ Phase 2:    MVP — npx create-agentfs: personal + compile.d/claude
+- ✅ Phase 2.5:  Onboard — agent-led interview
+- ✅ Phase 3:    Memory — Tulving taxonomy + confidence scoring
+- ✅ Phase 4:    Cron — consolidation + distillation + inbox-triage
+- ✅ Phase 5:    Security — policy.yaml + AppArmor + input validation
+- ✅ Phase 6:    Secrets — SOPS/age + exec --with-secrets
+- ✅ Phase 7:    Sync — bidirectional manifest ↔ CLAUDE.md
+- ✅ Phase 8:    compile.d/openclaw + memory sync
+- ✅ Phase 9:    Company + Shared profiles
+- ✅ Phase 10:   Full CLI (doctor + agnix, triage, migrate)
+- ✅ Phase 11:   Community — npm publish, contributing guide
 
 ## Contributing
 
-This project is in early design phase. Architecture feedback, use cases, and competing approaches are welcome.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on adding agent compilers and security modules.
 
 ## License
 
