@@ -88,6 +88,23 @@ export const claudeCompiler: AgentCompiler = {
     // Read template from the filesystem (async, so hot-reload works in dev)
     const templateSource = await fs.readFile(fileURLToPath(TEMPLATE_URL), 'utf-8');
 
+    // Clean identity: strip the file header and <!-- custom --> marker
+    const rawIdentity = initScripts['00-identity.md'] ?? '';
+    const identityClean = rawIdentity
+      .replace(/^# Agent Identity\s*\n*/m, '')
+      .replace(/<!--\s*custom\s*-->\s*$/m, '')
+      .trim() || null;
+
+    // Parse corrections: extract only actual entries (lines that aren't headers/comments)
+    const correctionsEntries = corrections
+      ? corrections
+          .split('\n')
+          .filter((line) => line.trim().length > 0)
+          .filter((line) => !line.startsWith('#') && !line.startsWith('>'))
+          .map((line) => line.replace(/^-\s*/, '').trim())
+          .filter((line) => line.length > 0)
+      : null;
+
     // Build template data from context
     const templateData = {
       vault: manifest.vault,
@@ -96,8 +113,8 @@ export const claudeCompiler: AgentCompiler = {
       frontmatter: manifest.frontmatter,
       boot: manifest.boot,
       modules: manifest.modules ?? null,
-      identity: initScripts['00-identity.md'] ?? null,
-      corrections: corrections ?? null,
+      identityClean,
+      correctionsEntries,
     };
 
     // Compile template and render

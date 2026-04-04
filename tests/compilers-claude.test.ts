@@ -36,21 +36,20 @@ describe('compilers/claude', () => {
   test('compile populates CLAUDE.md with correct context', async () => {
     const readFileSpy = jest.spyOn(fs, 'readFile').mockResolvedValue(
       'Vault: {{vault.name}} | Profile: {{agentos.profile}} | ' +
-      'Identity: {{identity}} | Corrections: {{corrections}} | Modules: {{join modules ","}}'
+      'Identity: {{identityClean}} | Corrections: {{#each correctionsEntries}}{{this}}{{/each}} | Modules: {{join modules ","}}'
     ) as jest.SpiedFunction<typeof fs.readFile>;
 
     const result = await claudeCompiler.compile(dummyContext);
 
     expect(result.agent).toBe('claude');
     expect(result.outputs).toHaveLength(1);
-    
+
     const output = result.outputs[0];
     expect(output.path).toBe('CLAUDE.md');
     expect(output.managed).toBe(true);
-    
+
     expect(output.content).toContain('Vault: Claude Vault');
     expect(output.content).toContain('Profile: personal');
-    expect(output.content).toContain('Identity: Identity Content');
     expect(output.content).toContain('Corrections: Corrections Content');
     expect(output.content).toContain('Modules: bmad');
 

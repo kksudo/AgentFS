@@ -27,10 +27,10 @@ const AGENTOS_VERSION = '1.0.0';
  * Mirrors a minimal SysVinit runlevel 3 boot (see architecture §4).
  */
 const BOOT_SEQUENCE: string[] = [
-  'init.d/00-identity.md',
-  'init.d/10-memory.md',
-  'init.d/20-tools.md',
-  'init.d/30-workflow.md',
+  '.agentos/init.d/00-identity.md',
+  '.agentos/init.d/10-memory.md',
+  '.agentos/init.d/20-today.md',
+  '.agentos/init.d/30-projects.md',
 ];
 
 /** Frontmatter fields every vault file must declare. */

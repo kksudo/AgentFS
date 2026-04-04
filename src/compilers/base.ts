@@ -123,18 +123,37 @@ export function registerHelpers(): void {
     return a === b ? options.fn(this) : options.inverse(this);
   });
 
+  /** Increment a number (for 1-based indexing in templates). */
+  Handlebars.registerHelper('inc', (val: number) => val + 1);
+
   /** Uppercase first letter. */
   Handlebars.registerHelper('capitalize', (str: string) => {
     if (typeof str !== 'string' || str.length === 0) return str;
     return str.charAt(0).toUpperCase() + str.slice(1);
   });
 
-  /** Convert FHS paths object to markdown table rows. */
+  /** Convert FHS paths object to markdown table rows with descriptions. */
   Handlebars.registerHelper('pathTable', (paths: Record<string, string>) => {
     if (!paths || typeof paths !== 'object') return '';
+    // Inline descriptions keyed by FHS path name — matches FHS_DESCRIPTIONS from fhs-mapping.ts
+    const desc: Record<string, string> = {
+      tmp: 'Единственная точка входа для новых заметок',
+      log: 'Ежедневные журналы',
+      spool: 'Очереди задач, приоритеты',
+      home: 'Активные проекты',
+      srv: 'Контент для публикации',
+      usr_share: 'Знания вне проектов',
+      proc_people: 'Активные контакты',
+      etc: 'Системная конфигурация',
+      archive: 'Завершённое',
+      home_contracts: 'Клиентские проекты',
+      usr_local_career: 'Job search pipeline',
+      home_user: 'Профессиональная база знаний',
+      usr_share_media: 'Медиафайлы',
+    };
     return Object.entries(paths)
       .filter(([, v]) => v !== undefined)
-      .map(([key, val]) => `| \`${key}\` | \`${val}/\` |`)
+      .map(([key, val]) => `| \`${val}/\` | \`${key}\` | ${desc[key] ?? ''} |`)
       .join('\n');
   });
 }

@@ -117,8 +117,9 @@ describe('compilers/base', () => {
 
     test('pathTable helper', () => {
       const tmpl = compileTemplate('{{{pathTable paths}}}');
-      expect(tmpl({ paths: { tmp: 'Inbox', daily: 'Daily' } }))
-        .toBe('| `tmp` | `Inbox/` |\n| `daily` | `Daily/` |');
+      const result = tmpl({ paths: { tmp: 'Inbox', daily: 'Daily' } });
+      expect(result).toContain('| `Inbox/` | `tmp` |');
+      expect(result).toContain('| `Daily/` | `daily` |');
     });
   });
 

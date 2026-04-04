@@ -27,12 +27,24 @@ import type { SetupAnswers, GeneratorResult } from '../types/index.js';
  * active process state, decrypted secrets, and per-agent session logs.
  */
 const GITIGNORE_LINES: readonly string[] = [
-  '# Runtime state',
+  '# Runtime state — never commit',
   '.agentos/proc/',
   '.agentos/secrets/decrypted/',
+  '',
+  '# Agent sessions and runtime data',
   '.claude/sessions/',
+  '.claude/mcp/',
   '.omc/sessions/',
   '.omc/state/',
+  '.omc/telemetry/',
+  '.cursor/',
+  '',
+  '# Obsidian runtime',
+  '.obsidian/workspace*.json',
+  '.obsidian/plugins/',
+  '',
+  '# Smart environment (AI indexing)',
+  '.smart-env/',
 ];
 
 /**
