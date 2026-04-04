@@ -1,0 +1,230 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1775325785053,
+  "projectRoot": "/Users/kksudo/projects/personal/AgentFS",
+  "techStack": {
+    "languages": [],
+    "frameworks": [],
+    "packageManager": null,
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": null,
+    "testCommand": null,
+    "lintCommand": null,
+    "devCommand": null,
+    "scripts": {}
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "docs"
+    ],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "_bmad": {
+      "path": "_bmad",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775325785019,
+      "keyFiles": []
+    },
+    "docs": {
+      "path": "docs",
+      "purpose": "Documentation",
+      "fileCount": 2,
+      "lastAccessed": 1775325785019,
+      "keyFiles": [
+        "architecture.md",
+        "competitive-research.md"
+      ]
+    },
+    "{output_folder}": {
+      "path": "{output_folder}",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1775325785020,
+      "keyFiles": []
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "docs/architecture.md",
+      "accessCount": 9,
+      "lastAccessed": 1775326142276,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/config.yaml",
+      "accessCount": 6,
+      "lastAccessed": 1775327363530,
+      "type": "file"
+    },
+    {
+      "path": "docs/bmm-workflow-status.yaml",
+      "accessCount": 5,
+      "lastAccessed": 1775326909577,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/core/config.yaml",
+      "accessCount": 4,
+      "lastAccessed": 1775327192790,
+      "type": "file"
+    },
+    {
+      "path": "_bmad",
+      "accessCount": 2,
+      "lastAccessed": 1775325871779,
+      "type": "directory"
+    },
+    {
+      "path": "docs/sprint-status.yaml",
+      "accessCount": 2,
+      "lastAccessed": 1775327005587,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/_config/manifest.yaml",
+      "accessCount": 2,
+      "lastAccessed": 1775327108183,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/4-implementation/bmad-sprint-planning/sprint-status-template.yaml",
+      "accessCount": 2,
+      "lastAccessed": 1775327189651,
+      "type": "file"
+    },
+    {
+      "path": "bmad/config.yaml",
+      "accessCount": 2,
+      "lastAccessed": 1775327232957,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/_config/ides/claude-code.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1775325864373,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/3-solutioning/bmad-create-architecture/steps/step-06-structure.md",
+      "accessCount": 1,
+      "lastAccessed": 1775325864553,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/core/bmad-init/SKILL.md",
+      "accessCount": 1,
+      "lastAccessed": 1775325876467,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/core/bmad-init/resources/core-module.yaml",
+      "accessCount": 1,
+      "lastAccessed": 1775325970612,
+      "type": "file"
+    },
+    {
+      "path": "README.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326089355,
+      "type": "file"
+    },
+    {
+      "path": "docs/competitive-research.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326095021,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/1-analysis/bmad-product-brief/resources/brief-template.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326115338,
+      "type": "file"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/product-brief.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326201277,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/2-plan-workflows/bmad-create-prd/templates/prd-template.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326247341,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/2-plan-workflows/bmad-create-prd/workflow.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326258387,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/2-plan-workflows/bmad-create-prd/steps-c",
+      "accessCount": 1,
+      "lastAccessed": 1775326267312,
+      "type": "directory"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/prd.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326394400,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/3-solutioning/bmad-create-architecture/architecture-decision-template.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326416945,
+      "type": "file"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/architecture.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326516621,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/3-solutioning/bmad-create-epics-and-stories/templates/epics-template.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326538086,
+      "type": "file"
+    },
+    {
+      "path": "_bmad-output/planning-artifacts/epics-and-stories.md",
+      "accessCount": 1,
+      "lastAccessed": 1775326831351,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/4-implementation/bmad-sprint-planning/workflow.md",
+      "accessCount": 1,
+      "lastAccessed": 1775327189129,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/4-implementation/bmad-sprint-status/workflow.md",
+      "accessCount": 1,
+      "lastAccessed": 1775327189535,
+      "type": "file"
+    },
+    {
+      "path": "_bmad/bmm/2-plan-workflows/bmad-create-prd/steps-c/step-12-complete.md",
+      "accessCount": 1,
+      "lastAccessed": 1775327195843,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}
