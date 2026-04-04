@@ -17,7 +17,7 @@
  */
 
 import path from 'node:path';
-import type { AgentRuntime, CompileOutput, CompileResult } from '../types/index.js';
+import type { AgentRuntime, CompileContext, CompileOutput, CompileResult } from '../types/index.js';
 import { buildCompileContext, writeOutputs } from '../compilers/base.js';
 import { claudeCompiler } from '../compilers/claude.js';
 import { openclawCompiler } from '../compilers/openclaw.js';
@@ -134,6 +134,40 @@ function printSummary(
 }
 
 // ---------------------------------------------------------------------------
+// Validation
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate the compile context and return a list of warning messages.
+ *
+ * These are advisory only — warnings do not block compilation.
+ * Callers should print warnings to stderr before proceeding.
+ *
+ * @param context - The compile context to validate
+ * @returns Array of human-readable warning strings (empty if all clear)
+ */
+export function validateContext(context: CompileContext): string[] {
+  const warnings: string[] = [];
+
+  // Check that the identity init script has been filled in.
+  const identity = context.initScripts?.['00-identity.md'];
+  if (identity !== undefined && identity.includes('(to be filled)')) {
+    warnings.push(
+      'Warning: Identity not configured. Run `agentfs onboard` to set up your agent identity.',
+    );
+  }
+
+  // Check that a profile is defined in the manifest.
+  if (context.manifest?.agentos?.profile === undefined) {
+    warnings.push(
+      'Warning: No profile set in manifest.agentos.profile. Run `agentfs onboard` to configure.',
+    );
+  }
+
+  return warnings;
+}
+
+// ---------------------------------------------------------------------------
 // Main command
 // ---------------------------------------------------------------------------
 
@@ -185,6 +219,14 @@ export async function compileCommand(args: string[]): Promise<number> {
       );
     }
     return 1;
+  }
+
+  // -------------------------------------------------------------------------
+  // Validate context — print warnings to stderr, never block compilation.
+  // -------------------------------------------------------------------------
+
+  for (const warning of validateContext(context)) {
+    printErr(warning);
   }
 
   // -------------------------------------------------------------------------

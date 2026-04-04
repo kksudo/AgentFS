@@ -101,6 +101,30 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
   - `docs(architecture): add composable security modules`
   - `fix(compile): handle missing init.d files gracefully`
 
+### Git Trailers (recommended)
+
+Structured metadata appended to commit messages for decision tracking:
+
+- `Constraint:` — active constraint that shaped this decision
+- `Rejected:` — alternative considered and reason for rejection
+- `Directive:` — warning for future modifiers of this code
+- `Confidence:` — high | medium | low
+- `Scope-risk:` — narrow | moderate | broad
+- `Not-tested:` — edge case not covered by tests
+
+Example:
+
+```
+feat(compile): add OpenClaw driver
+
+Implement compile.d/openclaw for .omc/project-memory.json output.
+
+Constraint: OMC has no enforcement API — advisory text only
+Rejected: JSON Schema validation | too complex for v1
+Confidence: high
+Scope-risk: narrow
+```
+
 ### Pull Request Convention
 - PR title matches commit convention
 - Description includes: what changed, why, how to test

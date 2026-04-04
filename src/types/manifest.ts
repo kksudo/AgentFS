@@ -80,6 +80,21 @@ export interface FrontmatterConfig {
   standard?: string[];
 }
 
+/** Lifecycle hook event names (inspired by OMC's 11-event model). */
+export type HookEvent =
+  | 'on-boot'        // agent session starts
+  | 'on-shutdown'    // agent session ends (runlevel 6)
+  | 'pre-compile'    // before agentfs compile
+  | 'post-compile'   // after agentfs compile
+  | 'on-commit'      // after git commit in vault
+  | 'on-file-create' // new file created in vault
+  | 'on-triage';     // inbox triage triggered
+
+/** Hook configuration — maps events to handler scripts. */
+export interface HooksConfig {
+  [event: string]: string[];  // event name → list of script paths relative to .agentos/hooks/
+}
+
 /**
  * The full manifest schema — `.agentos/manifest.yaml`.
  *
@@ -102,4 +117,6 @@ export interface Manifest {
   frontmatter: FrontmatterConfig;
   /** Optional active modules */
   modules?: string[];
+  /** Optional lifecycle hooks */
+  hooks?: HooksConfig;
 }

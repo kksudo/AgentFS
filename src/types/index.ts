@@ -15,6 +15,8 @@ export type {
   AgentConfig,
   BootConfig,
   FrontmatterConfig,
+  HookEvent,
+  HooksConfig,
   Manifest,
 } from './manifest.js';
 
