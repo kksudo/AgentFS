@@ -155,6 +155,33 @@ pnpm run lint:fix         # eslint with auto-fix
 pnpm run typecheck        # type check without emitting
 ```
 
+## AI Agent Usage (non-interactive mode)
+
+All commands support `--json`, `--config`, and `--output json` flags for non-interactive use by AI agents:
+
+```bash
+# Scaffold vault without prompts — pass answers as JSON
+agentfs init --json '{"vaultName":"my-vault","ownerName":"user","profile":"personal","primaryAgent":"claude","supportedAgents":["claude"],"modules":[]}'
+
+# Or read answers from a YAML/JSON file
+agentfs init --config setup.yaml
+
+# Compile with JSON output (structured, parseable)
+agentfs compile --output json
+
+# Specify target directory
+agentfs init --json '{"vaultName":"x"}' --dir /tmp/test-vault
+
+# Combine flags
+agentfs compile --output json --dir /path/to/vault
+```
+
+Common flags available on all commands:
+- `--json '<json>'` — inline JSON input (replaces interactive prompts)
+- `--config <path>` — read input from JSON or YAML file
+- `--output json` — structured JSON output instead of human text
+- `--dir <path>` — target vault directory (defaults to cwd)
+
 ## Architecture Document Navigation
 
 The main spec (`docs/architecture.md`) has 17 sections:
