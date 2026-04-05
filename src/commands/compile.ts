@@ -205,8 +205,9 @@ export async function compileCommand(args: string[]): Promise<number> {
     const isNotFound =
       err !== null &&
       typeof err === 'object' &&
+      err !== null &&
       'code' in err &&
-      (err as any).code === 'ENOENT';
+      (err as NodeJS.ErrnoException).code === 'ENOENT';
 
     if (isNotFound) {
       printErr(

@@ -25,9 +25,7 @@ coverage/
 .agentos/secrets/decrypted/
 
 # BMAD Method
-_bmad-output/implementation-artifacts/
-_bmad-output/brainstorming/
-_bmad-output/reports/
+_bmad-output/
 
 # Environment Variables
 .env
@@ -44,11 +42,9 @@ yarn-debug.log*
 yarn-error.log*
 
 # Agent Runtime State (sessions, telemetry, etc.)
-.claude/sessions/
-.claude/mcp/
-.omc/sessions/
-.omc/state/
-.omc/telemetry/
+.claude/
+.omc/
+.cursor/
 
 # Agent Configs (Compiled dynamically)
 # Note: CLAUDE.md, AGENTS.md, .cursorrules in repo root ARE tracked (project instructions).

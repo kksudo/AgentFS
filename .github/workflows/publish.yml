@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # provenance
+      id-token: write # OIDC for npm Trusted Publishing
 
     steps:
       - uses: actions/checkout@v6
@@ -33,7 +33,5 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Publish
-        run: pnpm publish --provenance --access public --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish (Trusted Publishing via OIDC)
+        run: pnpm publish --provenance --access public
