@@ -20,6 +20,7 @@ import inquirer from 'inquirer';
 import { readManifest } from '../compilers/base.js';
 import type { FhsPaths } from '../types/index.js';
 import type { SemanticEntryType } from '../types/memory.js';
+import { CliFlags, printError, printResult, resolveInput } from '../utils/cli-flags.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -27,20 +28,6 @@ import type { SemanticEntryType } from '../types/memory.js';
 
 /** Marker that separates AgentFS-managed content from user-added content. */
 const CUSTOM_MARKER = '<!-- custom -->';
-
-// ---------------------------------------------------------------------------
-// Output helpers
-// ---------------------------------------------------------------------------
-
-/** Write a line to stdout. */
-function print(line: string): void {
-  process.stdout.write(line + '\n');
-}
-
-/** Write a line to stderr. */
-function printErr(line: string): void {
-  process.stderr.write(line + '\n');
-}
 
 // ---------------------------------------------------------------------------
 // Interview answers
@@ -313,12 +300,11 @@ async function appendSemanticEntries(
  * 4. Append new entries to `.agentos/memory/semantic.md` (no duplicates).
  * 5. Print a human-readable summary of what changed.
  *
- * @param args - Arguments after the `onboard` subcommand token.
- *               Currently unused — reserved for future flags.
+ * @param flags - Parsed CLI flags
  * @returns 0 on success, 1 on error.
  */
-export async function onboardCommand(_args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
+export async function onboardCommand(flags: CliFlags): Promise<number> {
+  const vaultRoot = flags.targetDir;
 
   // -------------------------------------------------------------------------
   // 1. Verify manifest exists.
@@ -327,75 +313,84 @@ export async function onboardCommand(_args: string[]): Promise<number> {
   let manifest;
   try {
     manifest = await readManifest(vaultRoot);
-  } catch (err) {
-    const isNotFound =
-      err !== null &&
-      typeof err === 'object' &&
-      err !== null &&
-      'code' in err &&
-      (err as NodeJS.ErrnoException).code === 'ENOENT';
+  } catch (err: any) {
+    const isNotFound = err?.code === 'ENOENT';
 
     if (isNotFound) {
-      printErr('No AgentFS vault found. Run `npx create-agentfs` first.');
+      printError(flags, 'No AgentFS vault found. Run `npx create-agentfs` first.', 'VAULT_NOT_FOUND');
     } else {
-      printErr(
+      printError(
+        flags,
         `agentfs onboard: failed to read manifest — ${err instanceof Error ? err.message : String(err)}`,
+        'MANIFEST_READ_FAILED'
       );
     }
     return 1;
   }
 
   // -------------------------------------------------------------------------
-  // 2. Interactive interview.
+  // 2. Interview or JSON input.
   // -------------------------------------------------------------------------
 
-  print('');
-  print('AgentFS onboard — teaching your agent who you are.');
-  print('');
+  const input = await resolveInput(flags);
+  let answers: OnboardAnswers;
 
-  const answers = await inquirer.prompt<OnboardAnswers>([
-    {
-      type: 'input',
-      name: 'name',
-      message: 'What is your name?',
-      default: manifest.vault.owner,
-      validate: (v: string) => v.trim().length > 0 || 'Name cannot be empty.',
-    },
-    {
-      type: 'input',
-      name: 'role',
-      message: 'What is your role?',
-      default: '',
-      // e.g. "Platform Engineer", "Student", "Founder"
-    },
-    {
-      type: 'input',
-      name: 'style',
-      message: 'Describe your communication style:',
-      default: '',
-      // e.g. "direct, technical, no fluff"
-    },
-    {
-      type: 'input',
-      name: 'techStack',
-      message: 'What is your primary tech stack?',
-      default: '',
-      // e.g. "Kubernetes, ArgoCD, TypeScript"
-    },
-    {
-      type: 'input',
-      name: 'neverDo',
-      message: 'What should the agent NEVER do?',
-      default: '',
-      // e.g. "don't suggest LangChain, no emoji"
-    },
-    {
-      type: 'input',
-      name: 'preferences',
-      message: 'Any preferences the agent should know?',
-      default: '',
-    },
-  ]);
+  if (input !== null) {
+    // Non-interactive mode: use JSON/config input with defaults
+    answers = {
+      name: (input.name as string) || manifest.vault.owner,
+      role: (input.role as string) || '',
+      style: (input.style as string) || '',
+      techStack: (input.techStack as string) || '',
+      neverDo: (input.neverDo as string) || '',
+      preferences: (input.preferences as string) || '',
+    };
+  } else {
+    // Interactive mode: run inquirer prompts
+    if (flags.outputFormat !== 'json') {
+      process.stdout.write('\nAgentFS onboard — teaching your agent who you are.\n\n');
+    }
+
+    answers = await inquirer.prompt<OnboardAnswers>([
+      {
+        type: 'input',
+        name: 'name',
+        message: 'What is your name?',
+        default: manifest.vault.owner,
+        validate: (v: string) => v.trim().length > 0 || 'Name cannot be empty.',
+      },
+      {
+        type: 'input',
+        name: 'role',
+        message: 'What is your role?',
+        default: '',
+      },
+      {
+        type: 'input',
+        name: 'style',
+        message: 'Describe your communication style:',
+        default: '',
+      },
+      {
+        type: 'input',
+        name: 'techStack',
+        message: 'What is your primary tech stack?',
+        default: '',
+      },
+      {
+        type: 'input',
+        name: 'neverDo',
+        message: 'What should the agent NEVER do?',
+        default: '',
+      },
+      {
+        type: 'input',
+        name: 'preferences',
+        message: 'Any preferences the agent should know?',
+        default: '',
+      },
+    ]);
+  }
 
   // -------------------------------------------------------------------------
   // 3. Rewrite 00-identity.md.
@@ -406,9 +401,11 @@ export async function onboardCommand(_args: string[]): Promise<number> {
 
   try {
     identityStatus = await rewriteIdentityFile(identityPath, answers, manifest.paths);
-  } catch (err) {
-    printErr(
+  } catch (err: any) {
+    printError(
+      flags,
       `agentfs onboard: failed to write identity file — ${err instanceof Error ? err.message : String(err)}`,
+      'IDENTITY_WRITE_FAILED'
     );
     return 1;
   }
@@ -423,9 +420,11 @@ export async function onboardCommand(_args: string[]): Promise<number> {
 
   try {
     appended = await appendSemanticEntries(semanticPath, entries);
-  } catch (err) {
-    printErr(
+  } catch (err: any) {
+    printError(
+      flags,
       `agentfs onboard: failed to update semantic memory — ${err instanceof Error ? err.message : String(err)}`,
+      'MEMORY_UPDATE_FAILED'
     );
     return 1;
   }
@@ -434,21 +433,23 @@ export async function onboardCommand(_args: string[]): Promise<number> {
   // 5. Summary.
   // -------------------------------------------------------------------------
 
-  print('');
-  print('Onboard complete.');
-  print('');
-  print(`  .agentos/init.d/00-identity.md  — ${identityStatus}`);
-
+  let summary = `\nOnboard complete.\n\n  .agentos/init.d/00-identity.md  — ${identityStatus}\n`;
   if (appended.length > 0) {
-    print(`  .agentos/memory/semantic.md     — ${appended.length} entr${appended.length === 1 ? 'y' : 'ies'} appended`);
+    summary += `  .agentos/memory/semantic.md     — ${appended.length} entr${appended.length === 1 ? 'y' : 'ies'} appended\n`;
     for (const line of appended) {
-      print(`    + ${line}`);
+      summary += `    + ${line}\n`;
     }
   } else {
-    print('  .agentos/memory/semantic.md     — no new entries (all already present)');
+    summary += '  .agentos/memory/semantic.md     — no new entries (all already present)\n';
   }
 
-  print('');
+  printResult(flags, summary, {
+    identityStatus,
+    appendedCount: appended.length,
+    appendedEntries: appended,
+    identityPath,
+    semanticPath,
+  });
 
   return 0;
 }

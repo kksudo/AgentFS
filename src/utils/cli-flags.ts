@@ -32,17 +32,6 @@ export interface CliFlags {
 
 /**
  * Parse common CLI flags from an argument array.
- *
- * Extracts `--json`, `--config`, `--output`, `--dir` and returns
- * remaining args for command-specific parsing.
- *
- * @example
- * ```ts
- * // AI agent usage:
- * // agentfs init --json '{"vaultName":"my-vault","profile":"personal"}'
- * // agentfs compile --output json
- * // agentfs onboard --config ./answers.yaml
- * ```
  */
 export function parseCliFlags(argv: string[]): CliFlags {
   let jsonInput: Record<string, unknown> | null = null;
@@ -85,6 +74,11 @@ export function parseCliFlags(argv: string[]): CliFlags {
       continue;
     }
 
+    if (arg === '--non-interactive') {
+      i++;
+      continue;
+    }
+
     remaining.push(arg);
     i++;
   }
@@ -94,33 +88,24 @@ export function parseCliFlags(argv: string[]): CliFlags {
     configPath,
     outputFormat,
     targetDir,
-    nonInteractive: jsonInput !== null || configPath !== null,
+    nonInteractive: jsonInput !== null || configPath !== null || argv.includes('--non-interactive'),
     args: remaining,
   };
 }
 
 /**
  * Load input from --config file (JSON or YAML).
- *
- * @param configPath - Path to config file
- * @returns Parsed object
  */
 export async function loadConfigFile(configPath: string): Promise<Record<string, unknown>> {
   const content = await fs.readFile(configPath, 'utf-8');
-
   if (configPath.endsWith('.json')) {
     return JSON.parse(content) as Record<string, unknown>;
   }
-
-  // Default: YAML
   return yaml.load(content) as Record<string, unknown>;
 }
 
 /**
  * Resolve input from either --json or --config flags.
- *
- * @param flags - Parsed CLI flags
- * @returns Input object, or null if neither flag was provided
  */
 export async function resolveInput(flags: CliFlags): Promise<Record<string, unknown> | null> {
   if (flags.jsonInput) return flags.jsonInput;
@@ -130,30 +115,56 @@ export async function resolveInput(flags: CliFlags): Promise<Record<string, unkn
 
 /**
  * Resolve SetupAnswers from CLI flags — either JSON/config input or interactive prompts.
- *
- * AI agents use: `agentfs init --json '{"vaultName":"x","profile":"personal"}'`
- * Humans use: `agentfs init` (interactive prompts)
- *
- * @param flags - Parsed CLI flags from parseCliFlags()
- * @returns Complete SetupAnswers
  */
 export async function resolveSetupAnswers(flags: CliFlags): Promise<SetupAnswers> {
   const input = await resolveInput(flags);
 
-  if (input !== null) {
-    // Non-interactive mode: merge only defined JSON fields with defaults
+  if (input !== null || flags.nonInteractive) {
     const { createDefaultAnswers } = await import('../generators/prompts.js');
     const overrides: Partial<SetupAnswers> = { targetDir: flags.targetDir };
-    if (input.vaultName !== undefined) overrides.vaultName = input.vaultName as string;
-    if (input.ownerName !== undefined) overrides.ownerName = input.ownerName as string;
-    if (input.profile !== undefined) overrides.profile = input.profile as Profile;
-    if (input.primaryAgent !== undefined) overrides.primaryAgent = input.primaryAgent as AgentRuntime;
-    if (input.supportedAgents !== undefined) overrides.supportedAgents = input.supportedAgents as AgentRuntime[];
-    if (input.modules !== undefined) overrides.modules = input.modules as string[];
+    if (input) {
+      if (input.vaultName !== undefined) overrides.vaultName = input.vaultName as string;
+      if (input.ownerName !== undefined) overrides.ownerName = input.ownerName as string;
+      if (input.profile !== undefined) overrides.profile = input.profile as Profile;
+      if (input.primaryAgent !== undefined) overrides.primaryAgent = input.primaryAgent as AgentRuntime;
+      if (input.supportedAgents !== undefined) overrides.supportedAgents = input.supportedAgents as AgentRuntime[];
+      if (input.modules !== undefined) overrides.modules = input.modules as string[];
+    }
     return createDefaultAnswers(overrides);
   }
 
-  // Interactive mode: run inquirer prompts
   const { runSetupPrompts } = await import('../generators/prompts.js');
   return runSetupPrompts(flags.targetDir);
+}
+
+/**
+ * Print an error message, formatted as JSON if requested.
+ */
+export function printError(flags: CliFlags, humanMessage: string, errorCode: string, extra: Record<string, unknown> = {}): void {
+  if (flags.outputFormat === 'json') {
+    process.stdout.write(JSON.stringify({
+      status: 'error',
+      error: {
+        code: errorCode,
+        message: humanMessage,
+        ...extra,
+      },
+    }, null, 2) + '\n');
+  } else {
+    process.stderr.write(`\nError [${errorCode}]: ${humanMessage}\n\n`);
+  }
+}
+
+/**
+ * Print a successful result, formatted as JSON if requested.
+ */
+export function printResult(flags: CliFlags, humanMessage: string, data: Record<string, unknown> = {}): void {
+  if (flags.outputFormat === 'json') {
+    process.stdout.write(JSON.stringify({
+      status: 'success',
+      ...data,
+    }, null, 2) + '\n');
+  } else {
+    process.stdout.write(humanMessage + '\n');
+  }
 }

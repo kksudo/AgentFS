@@ -10,18 +10,7 @@
  */
 
 import { CRON_REGISTRY, runCronJob, runAllCronJobs } from '../cron/index.js';
-
-// ---------------------------------------------------------------------------
-// Output helpers
-// ---------------------------------------------------------------------------
-
-function print(line: string): void {
-  process.stdout.write(line + '\n');
-}
-
-function printErr(line: string): void {
-  process.stderr.write(line + '\n');
-}
+import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 
 // ---------------------------------------------------------------------------
 // Main
@@ -30,12 +19,12 @@ function printErr(line: string): void {
 /**
  * Entry point for the `agentfs cron` subcommand.
  *
- * @param args - Arguments after the `cron` subcommand token
+ * @param flags - Parsed CLI flags
  * @returns 0 on success, 1 on error
  */
-export async function cronCommand(args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
-  const action = args[0];
+export async function cronCommand(flags: CliFlags): Promise<number> {
+  const vaultRoot = flags.targetDir;
+  const action = flags.args[0];
 
   if (action === undefined || action === '--help' || action === '-h') {
     printCronUsage();
@@ -43,29 +32,29 @@ export async function cronCommand(args: string[]): Promise<number> {
   }
 
   if (action === 'list') {
-    print('');
-    print('Registered Cron Jobs');
-    print('═'.repeat(50));
+    let human = '\nRegistered Cron Jobs\n' + '═'.repeat(50) + '\n';
+    const jobs: Record<string, string> = {};
     for (const [key, job] of Object.entries(CRON_REGISTRY)) {
-      print(`  ${key.padEnd(20)} ${job.description}`);
+      human += `  ${key.padEnd(20)} ${job.description}\n`;
+      jobs[key] = job.description;
     }
-    print('');
+    human += '\n';
+    printResult(flags, human, { jobs });
     return 0;
   }
 
   if (action === 'run') {
-    const jobName = args[1];
+    const jobName = flags.args[1];
     if (!jobName) {
-      printErr('agentfs cron run: job name required');
-      printCronUsage();
+      printError(flags, 'agentfs cron run: job name required', 'MISSING_JOB_NAME');
       return 1;
     }
 
     const result = await runCronJob(jobName, vaultRoot);
     if (result.success) {
-      print(`✓ ${result.message}`);
+      printResult(flags, `✓ ${result.message}`, { result });
     } else {
-      printErr(`✗ ${result.message}`);
+      printError(flags, `✗ ${result.message}`, 'CRON_JOB_FAILED', { result });
     }
     return result.success ? 0 : 1;
   }
@@ -74,21 +63,19 @@ export async function cronCommand(args: string[]): Promise<number> {
     const results = await runAllCronJobs(vaultRoot);
     let hasFailure = false;
 
-    print('');
-    print('Cron Run Results');
-    print('═'.repeat(50));
+    let human = '\nCron Run Results\n' + '═'.repeat(50) + '\n';
     for (const result of results) {
       const icon = result.success ? '✓' : '✗';
-      print(`  ${icon} [${result.job}] ${result.message}`);
+      human += `  ${icon} [${result.job}] ${result.message}\n`;
       if (!result.success) hasFailure = true;
     }
-    print('');
+    human += '\n';
 
+    printResult(flags, human, { results });
     return hasFailure ? 1 : 0;
   }
 
-  printErr(`agentfs cron: unknown action '${action}'`);
-  printCronUsage();
+  printError(flags, `agentfs cron: unknown action '${action}'`, 'UNKNOWN_ACTION');
   return 1;
 }
 
@@ -97,12 +84,9 @@ export async function cronCommand(args: string[]): Promise<number> {
 // ---------------------------------------------------------------------------
 
 function printCronUsage(): void {
-  print('');
-  print('Usage: agentfs cron <action>');
-  print('');
-  print('Actions:');
-  print('  list                  List all registered cron jobs');
-  print('  run <job>             Run a specific cron job');
-  print('  run-all               Run all registered cron jobs');
-  print('');
+  process.stdout.write('\nUsage: agentfs cron <action>\n\n');
+  process.stdout.write('Actions:\n');
+  process.stdout.write('  list                  List all registered cron jobs\n');
+  process.stdout.write('  run <job>             Run a specific cron job\n');
+  process.stdout.write('  run-all               Run all registered cron jobs\n\n');
 }
