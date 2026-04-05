@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import type { AgentCompiler, CompileContext, CompileResult, SecurityPolicy } from '../types/index.js';
 import { compileTemplate } from './base.js';
+import { readSecurityPolicy } from '../security/parser.js';
+import { parseSemanticMemory } from '../memory/parser.js';
 
 // ---------------------------------------------------------------------------
 // Supported features
@@ -97,30 +99,29 @@ export const claudeCompiler: AgentCompiler = {
       .replace(/<!--\s*custom\s*-->\s*$/m, '')
       .trim() || null;
 
+    // Parse semantic memory: extract only active entries
+    const semanticEntries = context.semanticMemory
+      ? parseSemanticMemory(context.semanticMemory)
+          .filter((e) => e.status === 'active')
+          .map((e) => `${e.type}: ${e.content}`)
+      : null;
+
     // Parse corrections: extract only actual entries (lines that aren't headers/comments)
-    const correctionsEntries = corrections
-      ? corrections
+    const correctionsEntries = context.corrections
+      ? context.corrections
           .split('\n')
           .filter((line) => line.trim().length > 0)
           .filter((line) => !line.startsWith('#') && !line.startsWith('>'))
           .map((line) => line.replace(/^-\s*/, '').trim())
           .filter((line) => line.length > 0)
       : null;
+    // Read security policy (uses defaults if file missing)
+    const securityPolicy = await readSecurityPolicy(context.vaultRoot);
 
-    // Read security policy if it exists
-    let securityPolicy: SecurityPolicy | null = null;
-    try {
-      const policyPath = path.join(context.vaultRoot, '.agentos', 'security', 'policy.yaml');
-      const policyContent = await fs.readFile(policyPath, 'utf-8');
-      securityPolicy = yaml.load(policyContent) as SecurityPolicy;
-    } catch {
-      // No policy file — security section will be skipped in template
-    }
-
-    const hasSecurityRules = securityPolicy !== null;
-    const denyRead = securityPolicy?.file_access?.deny_read ?? [];
-    const denyWrite = securityPolicy?.file_access?.deny_write ?? [];
-    const askWrite = securityPolicy?.file_access?.ask_write ?? [];
+    const hasSecurityRules = true; // Always include security section for Claude
+    const denyRead = securityPolicy.file_access.deny_read;
+    const denyWrite = securityPolicy.file_access.deny_write;
+    const askWrite = securityPolicy.file_access.ask_write;
 
     // Build template data from context
     const templateData = {
@@ -131,6 +132,7 @@ export const claudeCompiler: AgentCompiler = {
       boot: manifest.boot,
       modules: manifest.modules ?? null,
       identityClean,
+      semanticEntries,
       correctionsEntries,
       hasSecurityRules,
       denyRead,
@@ -142,6 +144,16 @@ export const claudeCompiler: AgentCompiler = {
     const render = compileTemplate(templateSource);
     const content = render(templateData);
 
+    // Build settings.json content for Claude's native enforcement
+    const settings = {
+      $schema: 'https://json.schemastore.org/claude-code-settings.json',
+      permissions: {
+        allow: [], // User can add global allows in their own local settings
+        deny: [...denyRead, ...denyWrite],
+        ask: [...askWrite],
+      },
+    };
+
     return {
       agent: 'claude',
       outputs: [
@@ -150,8 +162,13 @@ export const claudeCompiler: AgentCompiler = {
           content,
           managed: true,
         },
+        {
+          path: '.claude/settings.json',
+          content: JSON.stringify(settings, null, 2) + '\n',
+          managed: true,
+        },
       ],
-      summary: `Compiled CLAUDE.md for vault "${manifest.vault.name}" (profile: ${manifest.agentos.profile})`,
+      summary: `Compiled CLAUDE.md and .claude/settings.json for vault "${manifest.vault.name}"`,
     };
   },
 
