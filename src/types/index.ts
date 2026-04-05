@@ -15,6 +15,7 @@ export type {
   AgentConfig,
   BootConfig,
   FrontmatterConfig,
+  SubagentStatus,
   HookEvent,
   HooksConfig,
   Manifest,

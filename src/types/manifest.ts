@@ -80,6 +80,17 @@ export interface FrontmatterConfig {
   standard?: string[];
 }
 
+/**
+ * Subagent completion status (Superpowers pattern).
+ *
+ * Written to `.agentos/proc/signals/` as status files for inter-agent communication.
+ */
+export type SubagentStatus =
+  | 'DONE'                // task completed successfully
+  | 'DONE_WITH_CONCERNS'  // completed but has warnings/questions
+  | 'BLOCKED'             // cannot proceed, needs external input
+  | 'NEEDS_CONTEXT';      // needs more information from controller
+
 /** Lifecycle hook event names (inspired by OMC's 11-event model). */
 export type HookEvent =
   | 'on-boot'        // agent session starts
