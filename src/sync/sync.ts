@@ -72,7 +72,7 @@ export async function importFromOmc(
       } else {
         imported++;
       }
-    } catch (err) {
+    } catch {
       errors.push(`Failed to import fact: ${fact}`);
     }
   }

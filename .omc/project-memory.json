@@ -100,6 +100,12 @@
       "type": "file"
     },
     {
+      "path": "src/cli.ts",
+      "accessCount": 8,
+      "lastAccessed": 1775387552916,
+      "type": "file"
+    },
+    {
       "path": "src/utils/fhs-mapping.ts",
       "accessCount": 7,
       "lastAccessed": 1775342115575,
@@ -109,12 +115,6 @@
       "path": "_bmad/bmm/config.yaml",
       "accessCount": 6,
       "lastAccessed": 1775327363530,
-      "type": "file"
-    },
-    {
-      "path": "src/cli.ts",
-      "accessCount": 6,
-      "lastAccessed": 1775333587042,
       "type": "file"
     },
     {

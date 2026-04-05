@@ -55,7 +55,7 @@ export const cursorCompiler: AgentCompiler = {
     };
   },
 
-  supports(feature: string): boolean {
+  supports(_feature: string): boolean {
     return false;
   },
 };

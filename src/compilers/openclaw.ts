@@ -8,8 +8,6 @@
  * @module compilers/openclaw
  */
 
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import type { AgentCompiler, CompileContext, CompileResult } from '../types/index.js';
 
 export const openclawCompiler: AgentCompiler = {
@@ -56,7 +54,7 @@ export const openclawCompiler: AgentCompiler = {
     };
   },
 
-  supports(feature: string): boolean {
+  supports(_feature: string): boolean {
     // OpenClaw doesn't support native security enforcement
     return false;
   },

@@ -243,7 +243,7 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     return 0;
   }
 
-  const binName = argv[1] ? import('node:path').then(p => p.basename(argv[1])) : 'agentfs';
+  // Detect if running as create-agentfs
   const isCreateBin = argv[1] && (argv[1].endsWith('create-agentfs') || argv[1].endsWith('create-agentfs.js'));
 
   // If no arguments or the command starts with a flag (like npx create-agentfs --non-interactive)

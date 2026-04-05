@@ -11,7 +11,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import yaml from 'js-yaml';
-import type { SecurityPolicy, SecurityMode } from '../types/index.js';
+import type { SecurityPolicy } from '../types/index.js';
 
 const POLICY_PATH = '.agentos/security/policy.yaml';
 

@@ -20,8 +20,6 @@ import {
   readSecurityPolicy,
   writeSecurityPolicy,
   scanForInjections,
-  checkCommand,
-  DEFAULT_POLICY,
 } from '../security/parser.js';
 import { compileClaudeSecurity } from '../security/claude-compiler.js';
 

@@ -16,7 +16,6 @@
  * @module commands/compile
  */
 
-import path from 'node:path';
 import type { AgentRuntime, CompileContext, CompileOutput, CompileResult } from '../types/index.js';
 import { buildCompileContext, writeOutputs } from '../compilers/base.js';
 import { claudeCompiler } from '../compilers/claude.js';

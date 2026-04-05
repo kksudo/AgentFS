@@ -14,9 +14,7 @@ function print(line: string): void {
   process.stdout.write(line + '\n');
 }
 
-function printErr(line: string): void {
-  process.stderr.write(line + '\n');
-}
+
 
 // ---------------------------------------------------------------------------
 // Doctor command — Story 12.1
@@ -28,7 +26,7 @@ interface DoctorCheck {
   message: string;
 }
 
-export async function doctorCommand(args: string[]): Promise<number> {
+export async function doctorCommand(_args: string[]): Promise<number> {
   const vaultRoot = process.cwd();
   const checks: DoctorCheck[] = [];
 
@@ -112,7 +110,7 @@ export async function doctorCommand(args: string[]): Promise<number> {
 // Triage command — Story 12.3
 // ---------------------------------------------------------------------------
 
-export async function triageCommand(args: string[]): Promise<number> {
+export async function triageCommand(_args: string[]): Promise<number> {
   const vaultRoot = process.cwd();
   const inboxDir = path.join(vaultRoot, 'Inbox');
 
@@ -167,7 +165,7 @@ function suggestFromContent(content: string, filename: string): string {
 // Migrate command — Story 12.2
 // ---------------------------------------------------------------------------
 
-export async function migrateCommand(args: string[]): Promise<number> {
+export async function migrateCommand(_args: string[]): Promise<number> {
   const vaultRoot = process.cwd();
 
   // Check if already has .agentos
