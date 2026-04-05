@@ -10,6 +10,8 @@
 import inquirer from 'inquirer';
 import path from 'node:path';
 import type { Profile, AgentRuntime, SetupAnswers } from '../types/index.js';
+import type { CliFlags } from '../utils/cli-flags.js';
+import { resolveInput } from '../utils/cli-flags.js';
 
 /** Available vault profiles with descriptions. */
 const PROFILES: { name: string; value: Profile }[] = [
@@ -129,4 +131,33 @@ export function createDefaultAnswers(overrides: Partial<SetupAnswers> = {}): Set
     targetDir: process.cwd(),
     ...overrides,
   };
+}
+
+/**
+ * Resolve SetupAnswers from CLI flags — either JSON/config input or interactive prompts.
+ *
+ * AI agents use: `agentfs init --json '{"vaultName":"x","profile":"personal"}'`
+ * Humans use: `agentfs init` (interactive prompts)
+ *
+ * @param flags - Parsed CLI flags from parseCliFlags()
+ * @returns Complete SetupAnswers
+ */
+export async function resolveSetupAnswers(flags: CliFlags): Promise<SetupAnswers> {
+  const input = await resolveInput(flags);
+
+  if (input !== null) {
+    // Non-interactive mode: merge JSON input with defaults
+    return createDefaultAnswers({
+      vaultName: input.vaultName as string | undefined,
+      ownerName: input.ownerName as string | undefined,
+      profile: input.profile as Profile | undefined,
+      primaryAgent: input.primaryAgent as AgentRuntime | undefined,
+      supportedAgents: input.supportedAgents as AgentRuntime[] | undefined,
+      modules: input.modules as string[] | undefined,
+      targetDir: flags.targetDir,
+    });
+  }
+
+  // Interactive mode: run inquirer prompts
+  return runSetupPrompts(flags.targetDir);
 }
