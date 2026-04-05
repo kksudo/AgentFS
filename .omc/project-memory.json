@@ -59,32 +59,50 @@
   "hotPaths": [
     {
       "path": "docs/architecture.md",
-      "accessCount": 16,
-      "lastAccessed": 1775333519688,
-      "type": "file"
-    },
-    {
-      "path": "tsconfig.json",
-      "accessCount": 10,
-      "lastAccessed": 1775333528480,
-      "type": "file"
-    },
-    {
-      "path": "CLAUDE.md",
-      "accessCount": 8,
-      "lastAccessed": 1775331241488,
+      "accessCount": 17,
+      "lastAccessed": 1775341103166,
       "type": "file"
     },
     {
       "path": "src/types/manifest.ts",
-      "accessCount": 8,
-      "lastAccessed": 1775333493681,
+      "accessCount": 13,
+      "lastAccessed": 1775380460837,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 13,
+      "lastAccessed": 1775386635172,
+      "type": "file"
+    },
+    {
+      "path": "tsconfig.json",
+      "accessCount": 12,
+      "lastAccessed": 1775384882033,
+      "type": "file"
+    },
+    {
+      "path": "CLAUDE.md",
+      "accessCount": 11,
+      "lastAccessed": 1775341323519,
       "type": "file"
     },
     {
       "path": "src/types/index.ts",
+      "accessCount": 10,
+      "lastAccessed": 1775380469165,
+      "type": "file"
+    },
+    {
+      "path": "src/types/memory.ts",
+      "accessCount": 8,
+      "lastAccessed": 1775343775374,
+      "type": "file"
+    },
+    {
+      "path": "src/utils/fhs-mapping.ts",
       "accessCount": 7,
-      "lastAccessed": 1775332907183,
+      "lastAccessed": 1775342115575,
       "type": "file"
     },
     {
@@ -97,6 +115,12 @@
       "path": "src/cli.ts",
       "accessCount": 6,
       "lastAccessed": 1775333587042,
+      "type": "file"
+    },
+    {
+      "path": "src/types/compiler.ts",
+      "accessCount": 6,
+      "lastAccessed": 1775343823510,
       "type": "file"
     },
     {
@@ -124,33 +148,21 @@
       "type": "file"
     },
     {
-      "path": "src/utils/fhs-mapping.ts",
+      "path": "src/generators/manifest.ts",
       "accessCount": 5,
-      "lastAccessed": 1775333499238,
+      "lastAccessed": 1775342141607,
       "type": "file"
     },
     {
-      "path": "package.json",
+      "path": "README.md",
       "accessCount": 5,
-      "lastAccessed": 1775333528686,
+      "lastAccessed": 1775381074415,
       "type": "file"
     },
     {
       "path": "_bmad/core/config.yaml",
       "accessCount": 4,
       "lastAccessed": 1775327192790,
-      "type": "file"
-    },
-    {
-      "path": "src/types/compiler.ts",
-      "accessCount": 4,
-      "lastAccessed": 1775332899987,
-      "type": "file"
-    },
-    {
-      "path": "src/types/memory.ts",
-      "accessCount": 4,
-      "lastAccessed": 1775333518586,
       "type": "file"
     },
     {
@@ -202,12 +214,6 @@
       "type": "file"
     },
     {
-      "path": "src/generators/manifest.ts",
-      "accessCount": 2,
-      "lastAccessed": 1775332193734,
-      "type": "file"
-    },
-    {
       "path": "tests/types.test.ts",
       "accessCount": 2,
       "lastAccessed": 1775333538744,
@@ -241,12 +247,6 @@
       "path": "_bmad/core/bmad-init/resources/core-module.yaml",
       "accessCount": 1,
       "lastAccessed": 1775325970612,
-      "type": "file"
-    },
-    {
-      "path": "README.md",
-      "accessCount": 1,
-      "lastAccessed": 1775326089355,
       "type": "file"
     },
     {
