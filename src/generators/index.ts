@@ -5,7 +5,7 @@
  * a specific part of the vault structure from SetupAnswers.
  */
 
-export { runSetupPrompts, createDefaultAnswers, resolveSetupAnswers } from './prompts.js';
+export { runSetupPrompts, createDefaultAnswers } from './prompts.js';
 export { generateFilesystem } from './filesystem.js';
 export { generateManifest } from './manifest.js';
 export { generateInitScripts } from './init.js';

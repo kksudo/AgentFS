@@ -12,6 +12,7 @@
 
 import fs from 'node:fs/promises';
 import yaml from 'js-yaml';
+import type { Profile, AgentRuntime, SetupAnswers } from '../types/index.js';
 
 /** Parsed CLI flags common to all commands. */
 export interface CliFlags {
@@ -125,4 +126,34 @@ export async function resolveInput(flags: CliFlags): Promise<Record<string, unkn
   if (flags.jsonInput) return flags.jsonInput;
   if (flags.configPath) return loadConfigFile(flags.configPath);
   return null;
+}
+
+/**
+ * Resolve SetupAnswers from CLI flags — either JSON/config input or interactive prompts.
+ *
+ * AI agents use: `agentfs init --json '{"vaultName":"x","profile":"personal"}'`
+ * Humans use: `agentfs init` (interactive prompts)
+ *
+ * @param flags - Parsed CLI flags from parseCliFlags()
+ * @returns Complete SetupAnswers
+ */
+export async function resolveSetupAnswers(flags: CliFlags): Promise<SetupAnswers> {
+  const input = await resolveInput(flags);
+
+  if (input !== null) {
+    // Non-interactive mode: merge only defined JSON fields with defaults
+    const { createDefaultAnswers } = await import('../generators/prompts.js');
+    const overrides: Partial<SetupAnswers> = { targetDir: flags.targetDir };
+    if (input.vaultName !== undefined) overrides.vaultName = input.vaultName as string;
+    if (input.ownerName !== undefined) overrides.ownerName = input.ownerName as string;
+    if (input.profile !== undefined) overrides.profile = input.profile as Profile;
+    if (input.primaryAgent !== undefined) overrides.primaryAgent = input.primaryAgent as AgentRuntime;
+    if (input.supportedAgents !== undefined) overrides.supportedAgents = input.supportedAgents as AgentRuntime[];
+    if (input.modules !== undefined) overrides.modules = input.modules as string[];
+    return createDefaultAnswers(overrides);
+  }
+
+  // Interactive mode: run inquirer prompts
+  const { runSetupPrompts } = await import('../generators/prompts.js');
+  return runSetupPrompts(flags.targetDir);
 }

@@ -1,8 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
-import { resolveSetupAnswers, createDefaultAnswers } from '../src/generators/prompts.js';
-import { parseCliFlags } from '../src/utils/cli-flags.js';
+import { createDefaultAnswers } from '../src/generators/prompts.js';
+import { parseCliFlags, resolveSetupAnswers } from '../src/utils/cli-flags.js';
 
 describe('resolveSetupAnswers', () => {
   let tmpDir: string;

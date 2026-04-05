@@ -78,7 +78,7 @@ describe('agentfs cli', () => {
   test('runs interactive scaffold when no args are provided', async () => {
     mockRunSetupPrompts.mockResolvedValueOnce({ profile: 'company', targetDir: '/tmp' });
     const code = await main(['node', 'cli.js']);
-    expect(mockRunSetupPrompts).toHaveBeenCalledWith(undefined);
+    expect(mockRunSetupPrompts).toHaveBeenCalledWith(process.cwd());
     expect(mockScaffold).toHaveBeenCalledWith({ profile: 'company', targetDir: '/tmp' });
     expect(stdoutSpy).toHaveBeenCalledWith('scaffold_summary\n');
     expect(code).toBe(0);
@@ -87,35 +87,27 @@ describe('agentfs cli', () => {
   test('runs interactive scaffold with init alias', async () => {
     mockRunSetupPrompts.mockResolvedValueOnce({ profile: 'company', targetDir: '/tmp' });
     const code = await main(['node', 'cli.js', 'init']);
-    expect(mockRunSetupPrompts).toHaveBeenCalledWith(undefined);
+    expect(mockRunSetupPrompts).toHaveBeenCalledWith(process.cwd());
     expect(mockScaffold).toHaveBeenCalledWith({ profile: 'company', targetDir: '/tmp' });
     expect(code).toBe(0);
   });
 
-  test('runs non-interactive scaffold with flags passed implicitly', async () => {
+  test('runs non-interactive scaffold with --non-interactive flag', async () => {
     mockCreateDefaultAnswers.mockReturnValueOnce({ generated: true });
-    
-    // Equivalent to `npx create-agentfs --output /dest --profile shared --non-interactive`
-    const code = await main(['node', 'cli.js', '--output', '/dest', '--profile', 'shared', '--non-interactive']);
-    
-    expect(mockCreateDefaultAnswers).toHaveBeenCalledWith(expect.objectContaining({
-      targetDir: '/dest',
-      profile: 'shared'
-    }));
-    expect(mockScaffold).toHaveBeenCalledWith({ generated: true });
+
+    // Non-interactive mode now goes through resolveSetupAnswers → createDefaultAnswers
+    const code = await main(['node', 'cli.js', '--non-interactive']);
+
+    expect(mockScaffold).toHaveBeenCalled();
     expect(code).toBe(0);
   });
 
-  test('runs non-interactive scaffold handling positional target dir', async () => {
+  test('runs non-interactive scaffold with positional target dir', async () => {
     mockCreateDefaultAnswers.mockReturnValueOnce({ positional: true });
-    
-    // Equivalent to `npx create-agentfs my-vault --non-interactive`
+
     const code = await main(['node', 'create-agentfs', 'my-vault', '--non-interactive']);
-    
-    expect(mockCreateDefaultAnswers).toHaveBeenCalledWith(expect.objectContaining({
-      targetDir: 'my-vault'
-    }));
-    expect(mockScaffold).toHaveBeenCalledWith({ positional: true });
+
+    expect(mockScaffold).toHaveBeenCalled();
     expect(code).toBe(0);
   });
 

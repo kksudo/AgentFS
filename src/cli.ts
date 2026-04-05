@@ -40,9 +40,9 @@ import { securityCommand } from './commands/security.js';
 import { secretCommand } from './commands/secret.js';
 import { importCommand, syncCommand } from './commands/sync.js';
 import { doctorCommand, triageCommand, migrateCommand } from './commands/doctor.js';
-import { runSetupPrompts, createDefaultAnswers } from './generators/prompts.js';
+import { runSetupPrompts } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
-import type { Profile } from './types/index.js';
+import { parseCliFlags, resolveSetupAnswers } from './utils/cli-flags.js';
 
 /** CLI version — kept in sync with package.json by convention. */
 export const VERSION = '0.1.0';
@@ -130,38 +130,54 @@ function printWelcome(): void {
 async function runScaffold(args: string[]): Promise<number> {
   printWelcome();
 
-  let targetDir: string | undefined;
-  let profile: string | undefined;
-  let nonInteractive = false;
+  const flags = parseCliFlags(args);
 
-  // Simple ad-hoc parser
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i];
+  // Also support legacy --non-interactive, --profile, --output (as dir alias)
+  let legacyDir: string | undefined;
+  let legacyProfile: string | undefined;
+  let legacyNonInteractive = false;
+
+  for (let i = 0; i < flags.args.length; i++) {
+    const arg = flags.args[i];
     if (arg === '--output' || arg === '-o') {
-      targetDir = args[++i];
+      legacyDir = flags.args[++i];
     } else if (arg === '--profile' || arg === '-p') {
-      profile = args[++i];
+      legacyProfile = flags.args[++i];
     } else if (arg === '--non-interactive') {
-      nonInteractive = true;
-    } else if (!arg.startsWith('-') && !targetDir) {
-      // Positional target directory
-      targetDir = arg;
+      legacyNonInteractive = true;
+    } else if (!arg.startsWith('-') && !legacyDir) {
+      legacyDir = arg;
     }
   }
 
+  // Merge legacy flags into CliFlags
+  if (legacyDir) flags.targetDir = legacyDir;
+  if (legacyNonInteractive) flags.nonInteractive = true;
+
+  // If --json or --config provided, merge profile from legacy if not in JSON
+  if (legacyProfile && flags.jsonInput && !flags.jsonInput.profile) {
+    flags.jsonInput.profile = legacyProfile;
+  }
+  if (legacyProfile && !flags.jsonInput && !flags.configPath) {
+    // Legacy non-interactive with --profile
+    flags.jsonInput = { profile: legacyProfile };
+    flags.nonInteractive = true;
+  }
+
   let answers;
-  if (nonInteractive) {
-    answers = createDefaultAnswers({
-      targetDir: targetDir ?? process.cwd(),
-      profile: (profile as Profile) ?? 'personal',
-    });
+  if (flags.nonInteractive) {
+    answers = await resolveSetupAnswers(flags);
   } else {
-    answers = await runSetupPrompts(targetDir);
+    answers = await runSetupPrompts(flags.targetDir);
   }
 
   try {
     const result = await scaffold(answers);
-    print(formatScaffoldSummary(result));
+    if (flags.outputFormat === 'json') {
+      print(JSON.stringify(result, null, 2));
+    } else {
+      print(formatScaffoldSummary(result));
+    }
     return 0;
   } catch (err) {
     printErr(`Scaffolding failed: ${err instanceof Error ? err.message : String(err)}`);
