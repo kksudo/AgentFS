@@ -40,11 +40,9 @@ export async function readInitScripts(vaultRoot: string): Promise<Record<string,
     const entries = await fs.readdir(initDir);
     const mdFiles = entries.filter((f) => f.endsWith('.md')).sort();
 
-    await Promise.all(
-      mdFiles.map(async (filename) => {
-        scripts[filename] = await fs.readFile(path.join(initDir, filename), 'utf-8');
-      }),
-    );
+    for (const filename of mdFiles) {
+      scripts[filename] = await fs.readFile(path.join(initDir, filename), 'utf-8');
+    }
   } catch {
     // init.d/ doesn't exist — return empty
   }
