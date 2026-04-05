@@ -9,8 +9,10 @@
  */
 
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { AgentCompiler, CompileContext, CompileResult } from '../types/index.js';
+import yaml from 'js-yaml';
+import type { AgentCompiler, CompileContext, CompileResult, SecurityPolicy } from '../types/index.js';
 import { compileTemplate } from './base.js';
 
 // ---------------------------------------------------------------------------
@@ -105,6 +107,21 @@ export const claudeCompiler: AgentCompiler = {
           .filter((line) => line.length > 0)
       : null;
 
+    // Read security policy if it exists
+    let securityPolicy: SecurityPolicy | null = null;
+    try {
+      const policyPath = path.join(context.vaultRoot, '.agentos', 'security', 'policy.yaml');
+      const policyContent = await fs.readFile(policyPath, 'utf-8');
+      securityPolicy = yaml.load(policyContent) as SecurityPolicy;
+    } catch {
+      // No policy file — security section will be skipped in template
+    }
+
+    const hasSecurityRules = securityPolicy !== null;
+    const denyRead = securityPolicy?.file_access?.deny_read ?? [];
+    const denyWrite = securityPolicy?.file_access?.deny_write ?? [];
+    const askWrite = securityPolicy?.file_access?.ask_write ?? [];
+
     // Build template data from context
     const templateData = {
       vault: manifest.vault,
@@ -115,6 +132,10 @@ export const claudeCompiler: AgentCompiler = {
       modules: manifest.modules ?? null,
       identityClean,
       correctionsEntries,
+      hasSecurityRules,
+      denyRead,
+      denyWrite,
+      askWrite,
     };
 
     // Compile template and render

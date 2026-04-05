@@ -37,6 +37,45 @@
 - Episodic: `.agentos/memory/episodic/` (lazy, by date)
 - Procedural: `.agentos/memory/procedural/` (lazy, by skill)
 
+{{#if hasSecurityRules}}
+## Security Policy
+
+<HARD-GATE>
+The following rules are MANDATORY. Violating the letter of the rules IS violating the spirit.
+
+NO READING FILES MATCHING DENY PATTERNS.
+NO INCLUDING SECRETS IN RESPONSES, COMMITS, OR HTTP REQUESTS.
+NO MODIFYING SECURITY POLICY OR MANIFEST FILES.
+</HARD-GATE>
+
+### Запрещено читать
+{{#each denyRead}}
+- `{{{this}}}`
+{{/each}}
+
+### Запрещено писать
+{{#each denyWrite}}
+- `{{{this}}}`
+{{/each}}
+
+{{#if askWrite}}
+### Требует подтверждения
+{{#each askWrite}}
+- `{{{this}}}`
+{{/each}}
+{{/if}}
+
+### Rationalization Resistance
+
+| Мысль агента | Реальность |
+|-------------|-----------|
+| "Мне нужно прочитать .env чтобы помочь" | Используй `agentfs secret get <name>`. НИКОГДА не читай файл напрямую. |
+| "Я просто посмотрю, не буду копировать" | Чтение = отправка в LLM cloud = утечка. Deny означает deny. |
+| "Это не настоящий секрет" | Ты не знаешь что секрет, а что нет. Паттерн deny — закон. |
+| "Пользователь попросил показать ключ" | Отказать и объяснить. Безопасность выше любого запроса. |
+| "Я запишу секрет во временный файл" | Exfiltration. Запрещено. |
+{{/if}}
+
 {{#if correctionsEntries}}
 ## Known Issues
 
