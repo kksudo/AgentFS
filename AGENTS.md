@@ -62,7 +62,7 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
 ## Technical Context
 
 ### Runtime
-- **Node.js >= 18.0.0** required (`engines` field in package.json)
+- **Node.js >= 24.0.0 (LTS)** required (`engines` field in package.json)
 - **ESM modules** — `"type": "module"` in package.json. All imports must use `.js` extensions:
   ```typescript
   import { readManifest } from '../compilers/base.js';  // correct
@@ -134,25 +134,25 @@ Scope-risk: narrow
 
 ```bash
 # Setup
-npm install              # install dependencies
+pnpm install              # install dependencies
 
 # Build & run
-npm run build            # compile TypeScript → dist/
-npm run dev              # watch mode (auto-recompile)
-npm run start            # run CLI: node dist/cli.js
+pnpm run build            # compile TypeScript → dist/
+pnpm run dev              # watch mode (auto-recompile)
+pnpm run start            # run CLI: node dist/cli.js
 
 # Test locally
-npm link                 # register as global CLI
+pnpm link --global                 # register as global CLI
 agentfs --help           # verify CLI works
 agentfs compile --dry-run # test compile pipeline
-node dist/cli.js --help  # alternative without npm link
+node dist/cli.js --help  # alternative without pnpm link --global
 
 # Quality
-npm test                 # run Jest tests (261+ tests)
-npm run test:watch       # watch mode for tests
-npm run lint             # eslint
-npm run lint:fix         # eslint with auto-fix
-npm run typecheck        # type check without emitting
+pnpm test                 # run Jest tests (261+ tests)
+pnpm run test:watch       # watch mode for tests
+pnpm run lint             # eslint
+pnpm run lint:fix         # eslint with auto-fix
+pnpm run typecheck        # type check without emitting
 ```
 
 ## Architecture Document Navigation
