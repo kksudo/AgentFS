@@ -9,6 +9,7 @@ Thank you for your interest in contributing to **AgentFS**! This document provid
 4. [Creating Security Modules](#creating-security-modules)
 5. [Commit Convention](#commit-convention)
 6. [Pull Request Process](#pull-request-process)
+7. [Release Process](#release-process)
 
 ## Core Philosophy
 
@@ -27,28 +28,57 @@ Key constraints:
 
 ## Development Setup
 
-1. **Clone the repo**
-   ```bash
-   git clone git@github.com:kksudo/agentfs.git
-   cd agentfs
-   ```
+### Prerequisites
+- **Node.js >= 24.0.0** (LTS) — use `nvm use` (`.nvmrc` included)
+- **pnpm** — `npm install -g pnpm`
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+### Quick Start
 
-3. **Run tests**
-   We use Jest in ESM mode:
-   ```bash
-   npm test
-   ```
+```bash
+# Clone
+git clone git@github.com:kksudo/agentfs.git
+cd agentfs
 
-4. **Build and test the CLI locally**
-   ```bash
-   npm run build
-   node dist/cli.js --help
-   ```
+# Switch to correct Node version
+nvm use
+
+# Install dependencies
+pnpm install
+
+# Build
+pnpm run build
+
+# Run tests (261+ tests, Jest ESM mode)
+pnpm test
+
+# Test CLI locally
+node dist/cli.js --help
+
+# Or link globally
+pnpm link --global
+agentfs --help
+```
+
+### All Commands
+
+```bash
+pnpm run build        # compile TypeScript → dist/
+pnpm run dev          # watch mode (auto-recompile)
+pnpm test             # run Jest tests
+pnpm run test:watch   # watch mode for tests
+pnpm run lint         # eslint
+pnpm run lint:fix     # eslint with auto-fix
+pnpm run typecheck    # type check without emitting
+```
+
+### Important: ESM Project
+
+This is an ESM project (`"type": "module"` in package.json). All imports must use `.js` extensions:
+
+```typescript
+import { readManifest } from '../compilers/base.js';  // correct
+import { readManifest } from '../compilers/base';     // WRONG
+```
 
 ## Adding a New Compiler Driver
 
@@ -74,7 +104,7 @@ To support a new AI agent runtime (like Cursor, OpenClaw, or a custom LLM interf
        };
      },
      
-     supports(feature: string): boolean {
+     supports(_feature: string): boolean {
        // e.g. return true for 'security-enforce' if native MAC is supported
        return false;
      }
@@ -114,10 +144,78 @@ We use Conventional Commits. All PRs must have atomic commits following this for
 
 Scoping is highly encouraged: e.g. `feat(compile)`, `feat(memory)`, `fix(cli)`.
 
+### Git Trailers (recommended)
+
+Structured metadata appended to commit messages for decision tracking:
+
+```
+feat(compile): add OpenClaw driver
+
+Implement compile.d/openclaw for .omc/project-memory.json output.
+
+Constraint: OMC has no enforcement API — advisory text only
+Rejected: JSON Schema validation | too complex for v1
+Confidence: high
+Scope-risk: narrow
+```
+
 ## Pull Request Process
 
 1. Create a feature branch (`feat/your-feature-name` or `fix/your-fix-name`).
-2. Add comprehensive unit tests. We mandate **high test coverage** (95%+). 
-3. Run `npm run lint` and `npm test` before pushing.
-4. Ensure your PR description documents the exact problem, the solution, and provides any needed verification steps or commands.
-5. Code ownership check: please request a review from `@kksudo`.
+2. **Never push directly to `main`** — always use a PR.
+3. Add comprehensive unit tests. We mandate **high test coverage** (95%+).
+4. Run `pnpm run lint` and `pnpm test` before pushing.
+5. Ensure your PR description documents the exact problem, the solution, and provides any needed verification steps or commands.
+6. CI must pass (build + typecheck + lint + test on Node 24).
+7. Code ownership check: please request a review from `@kksudo`.
+
+## Release Process
+
+Releases are automated via GitHub Actions. Creating a GitHub Release triggers `npm publish`.
+
+### Prerequisites (one-time setup)
+
+1. **npm account** — register at https://www.npmjs.com
+2. **npm token** — Profile → Access Tokens → Generate New Token → **Automation**
+3. **GitHub secret** — Repo → Settings → Secrets → Actions → `NPM_TOKEN` = your token
+
+### Publishing a Release
+
+```bash
+# 1. Make sure you're on main with latest
+git checkout main && git pull
+
+# 2. Bump version (creates commit + git tag)
+npm version patch   # 0.1.0 → 0.1.1 (bugfix)
+npm version minor   # 0.1.0 → 0.2.0 (new features)
+npm version major   # 0.1.0 → 1.0.0 (breaking changes)
+
+# 3. Push commit and tag
+git push && git push --tags
+
+# 4. Create GitHub Release (triggers npm publish)
+gh release create v0.1.1 --title "v0.1.1" --generate-notes
+```
+
+### What Happens Automatically
+
+```
+GitHub Release created
+  → publish.yml triggers
+    → pnpm install → build → test
+      → pnpm publish --provenance --access public
+        → Package live on npm
+```
+
+### Verify
+
+```bash
+npm view create-agentfs        # check package info
+npx create-agentfs --help      # test as end user
+```
+
+### Version Policy
+
+- **patch** (0.0.x) — bug fixes, lint fixes, doc updates
+- **minor** (0.x.0) — new features, new compile drivers, new commands
+- **major** (x.0.0) — breaking changes to manifest.yaml schema, CLI args, or compile output format
