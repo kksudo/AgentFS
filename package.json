@@ -30,6 +30,14 @@
   ],
   "author": "Kazakov Kirill",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kksudo/AgentFS.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kksudo/AgentFS/issues"
+  },
+  "homepage": "https://github.com/kksudo/AgentFS#readme",
   "packageManager": "pnpm@10.11.0",
   "engines": {
     "node": ">=24.0.0"
