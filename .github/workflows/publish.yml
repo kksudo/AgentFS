@@ -34,4 +34,4 @@ jobs:
         run: pnpm test
 
       - name: Publish (Trusted Publishing via OIDC)
-        run: npm publish --provenance --access public
+        run: pnpm publish --provenance --access public
