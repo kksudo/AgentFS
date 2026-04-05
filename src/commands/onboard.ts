@@ -331,8 +331,9 @@ export async function onboardCommand(_args: string[]): Promise<number> {
     const isNotFound =
       err !== null &&
       typeof err === 'object' &&
+      err !== null &&
       'code' in err &&
-      (err as any).code === 'ENOENT';
+      (err as NodeJS.ErrnoException).code === 'ENOENT';
 
     if (isNotFound) {
       printErr('No AgentFS vault found. Run `npx create-agentfs` first.');
