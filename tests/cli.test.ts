@@ -65,13 +65,13 @@ describe('agentfs cli', () => {
 
   test('dispatches to compile command', async () => {
     const code = await main(['node', 'cli.js', 'compile', '--some-flag']);
-    expect(mockCompileCommand).toHaveBeenCalledWith(['--some-flag']);
+    expect(mockCompileCommand).toHaveBeenCalledWith(expect.objectContaining({ args: ['--some-flag'] }));
     expect(code).toBe(0);
   });
 
   test('dispatches to onboard command', async () => {
     const code = await main(['node', 'cli.js', 'onboard']);
-    expect(mockOnboardCommand).toHaveBeenCalledWith([]);
+    expect(mockOnboardCommand).toHaveBeenCalledWith(expect.objectContaining({ args: [] }));
     expect(code).toBe(0);
   });
 

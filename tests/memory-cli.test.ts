@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { jest } from '@jest/globals';
 import { memoryCommand } from '../src/commands/memory.js';
+import { parseCliFlags } from '../src/utils/cli-flags.js';
 
 describe('commands/memory', () => {
   let tmpVault: string;
@@ -28,19 +29,19 @@ describe('commands/memory', () => {
   });
 
   test('prints usage with no arguments', async () => {
-    const code = await memoryCommand([]);
+    const code = await memoryCommand(parseCliFlags([]));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: agentfs memory'));
   });
 
   test('prints usage with --help', async () => {
-    const code = await memoryCommand(['--help']);
+    const code = await memoryCommand(parseCliFlags(['--help']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: agentfs memory'));
   });
 
   test('show semantic — error when no semantic.md exists', async () => {
-    const code = await memoryCommand(['show']);
+    const code = await memoryCommand(parseCliFlags(['show']));
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No semantic memory found'));
   });
@@ -52,7 +53,7 @@ describe('commands/memory', () => {
       'PREF: dark mode\nFACT: [active] uses TypeScript\nPATTERN: [confidence:0.85] works mornings\nAVOID: LangChain\n'
     );
 
-    const code = await memoryCommand(['show']);
+    const code = await memoryCommand(parseCliFlags(['show']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Semantic Memory'));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('dark mode'));
@@ -64,7 +65,7 @@ describe('commands/memory', () => {
     await fs.mkdir(path.join(tmpVault, '.agentos/memory'), { recursive: true });
     await fs.writeFile(path.join(tmpVault, '.agentos/memory/semantic.md'), '# Semantic Memory\n');
 
-    const code = await memoryCommand(['show']);
+    const code = await memoryCommand(parseCliFlags(['show']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('empty'));
   });
@@ -73,13 +74,13 @@ describe('commands/memory', () => {
     await fs.mkdir(path.join(tmpVault, '.agentos/memory/episodic'), { recursive: true });
     await fs.writeFile(path.join(tmpVault, '.agentos/memory/episodic/2026-04-04.md'), '# 2026-04-04\n');
 
-    const code = await memoryCommand(['show', 'episodic']);
+    const code = await memoryCommand(parseCliFlags(['show', 'episodic']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('2026-04-04'));
   });
 
   test('show episodic — empty', async () => {
-    const code = await memoryCommand(['show', 'episodic']);
+    const code = await memoryCommand(parseCliFlags(['show', 'episodic']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('No episodic'));
   });
@@ -91,13 +92,13 @@ describe('commands/memory', () => {
       '# 2026-04-04\n\n## Events\n- Did stuff\n'
     );
 
-    const code = await memoryCommand(['show', 'episodic', '2026-04-04']);
+    const code = await memoryCommand(parseCliFlags(['show', 'episodic', '2026-04-04']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Did stuff'));
   });
 
   test('show episodic <date> — not found', async () => {
-    const code = await memoryCommand(['show', 'episodic', '1999-01-01']);
+    const code = await memoryCommand(parseCliFlags(['show', 'episodic', '1999-01-01']));
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No episodic entry'));
   });
@@ -106,13 +107,13 @@ describe('commands/memory', () => {
     await fs.mkdir(path.join(tmpVault, '.agentos/memory/procedural'), { recursive: true });
     await fs.writeFile(path.join(tmpVault, '.agentos/memory/procedural/deploy-k8s.md'), '# Deploy K8s\n');
 
-    const code = await memoryCommand(['show', 'procedural']);
+    const code = await memoryCommand(parseCliFlags(['show', 'procedural']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('deploy-k8s'));
   });
 
   test('show procedural — empty', async () => {
-    const code = await memoryCommand(['show', 'procedural']);
+    const code = await memoryCommand(parseCliFlags(['show', 'procedural']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('No procedural'));
   });
@@ -124,13 +125,13 @@ describe('commands/memory', () => {
       '# Deploy K8s\nHow to deploy\n'
     );
 
-    const code = await memoryCommand(['show', 'procedural', 'deploy-k8s']);
+    const code = await memoryCommand(parseCliFlags(['show', 'procedural', 'deploy-k8s']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('How to deploy'));
   });
 
   test('show procedural <name> — not found', async () => {
-    const code = await memoryCommand(['show', 'procedural', 'nonexistent']);
+    const code = await memoryCommand(parseCliFlags(['show', 'procedural', 'nonexistent']));
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No procedural skill'));
   });
@@ -143,20 +144,20 @@ describe('commands/memory', () => {
       'PREF: dark mode\nFACT: [active] uses TS\n'
     );
 
-    const code = await memoryCommand(['consolidate']);
+    const code = await memoryCommand(parseCliFlags(['consolidate']));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Consolidation'));
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Semantic entries: 2'));
   });
 
   test('consolidate — no semantic memory', async () => {
-    const code = await memoryCommand(['consolidate']);
+    const code = await memoryCommand(parseCliFlags(['consolidate']));
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No semantic memory'));
   });
 
   test('unknown action — returns error', async () => {
-    const code = await memoryCommand(['unknown']);
+    const code = await memoryCommand(parseCliFlags(['unknown']));
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("unknown action 'unknown'"));
   });

@@ -5,8 +5,8 @@
 ## 🔴 The Problem: Agent Fragmentation
 Currently, every AI tool is a silo. 
 - **Claude Code** needs `CLAUDE.md`. 
-- **Cursor** needs `.cursorrules`. 
-- **OpenClaw** needs `.omc/project-memory.json`. 
+- **Cursor** needs `.cursor/rules/`. 
+- **OpenClaw** needs `.openclaw/`. 
 
 When you use multiple agents, you have to maintain your rules, identity, and context in three different places. They don't share memory. They don't respect the same security rules. They are strangers in your vault every time you start a new session.
 
@@ -25,7 +25,7 @@ AgentFS introduces a **Kernel Space** (`.agentos/`) to your vault. You define wh
 │   Obsidian sees and renders everything           │
 ├─────────────────────────────────────────────────┤
 │          NATIVE RUNTIMES (per-agent)            │
-│   .claude/  .omc/  .cursor/  .obsidian/         │
+│   .claude/  .openclaw/  .cursor/  .obsidian/   │
 │   Native configs — each agent reads its own      │
 ├─────────────────────────────────────────────────┤
 │         KERNEL SPACE (.agentos/)                │
@@ -56,8 +56,8 @@ Five rules, stolen from Unix:
 │   └── 30-projects.md         ← load active projects
 ├── compile.d/                 ← per-agent "drivers"
 │   ├── claude/                ← manifest → CLAUDE.md + .claude/settings.json
-│   ├── openclaw/              ← manifest → SOUL.md + .omc/
-│   └── cursor/                ← manifest → .cursorrules
+│   ├── openclaw/              ← manifest → .openclaw/
+│   └── cursor/                ← manifest → .cursor/rules/
 ├── security/                  ← AppArmor-style profiles + secrets vault
 │   ├── policy.yaml            ← Mandatory Access Control rules
 │   ├── modules/               ← domain-specific security (crypto, web, infra)
@@ -91,12 +91,11 @@ Write once in `.agentos/`, compile to all native formats:
     claude/     openclaw/    cursor/
          │          │          │
          ▼          ▼          ▼
-   CLAUDE.md    SOUL.md    .cursorrules
-   .claude/     .omc/      .cursor/
-   settings     project-
-               memory.json
+   CLAUDE.md    .openclaw/  .cursor/rules/
+   .claude/     AGENTS,     agentfs-
+   settings     SOUL...     global.mdc
 
-         + AGENTS.md (vault router)
+         + AGENT-MAP.md (vault router)
 ```
 
 ```bash
@@ -211,7 +210,7 @@ agentfs sync                          # bidirectional manifest ↔ compiled outp
 - 🤖 **[AI Agent Manual](docs/ai-manual.md)** — Tell your AI to read this file first. Yes, AgentFS is 100% **AI-Native** and provides an explicit instruction manual for the AI itself.
 - 🏛️ **[Architecture Document](docs/architecture.md)** — Full design document (v3, 17 sections).
 - 🔍 **[Competitive Research](docs/competitive-research.md)** — Analysis of 12 existing repos and what we took from them.
-- 🗺️ **[AGENTS.md](AGENTS.md)** — Vault router (generated).
+- 🗺️ **[AGENT-MAP.md](AGENT-MAP.md)** — Vault router (generated).
 
 ## Roadmap
 

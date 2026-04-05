@@ -13,6 +13,7 @@ import {
 import { scanForExfiltration, logViolation } from '../src/secrets/exfil-guard.js';
 import { DEFAULT_POLICY } from '../src/security/parser.js';
 import { secretCommand } from '../src/commands/secret.js';
+import { parseCliFlags } from '../src/utils/cli-flags.js';
 
 describe('secrets system', () => {
   let tmpVault: string;
@@ -145,48 +146,48 @@ describe('secrets system', () => {
     afterAll(() => { stdoutSpy.mockRestore(); stderrSpy.mockRestore(); });
 
     test('prints usage with no args', async () => {
-      const code = await secretCommand([]);
+      const code = await secretCommand(parseCliFlags([]));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: agentfs secret'));
     });
 
     test('add requires name and value', async () => {
-      const code = await secretCommand(['add', 'name-only']);
+      const code = await secretCommand(parseCliFlags(['add', 'name-only']));
       expect(code).toBe(1);
     });
 
     test('add stores secret', async () => {
-      const code = await secretCommand(['add', 'my-token', 'abc123']);
+      const code = await secretCommand(parseCliFlags(['add', 'my-token', 'abc123']));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('my-token'));
     });
 
     test('list shows secrets', async () => {
       await addSecret(tmpVault, 'test-key', 'val');
-      const code = await secretCommand(['list']);
+      const code = await secretCommand(parseCliFlags(['list']));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('test-key'));
     });
 
     test('remove deletes secret', async () => {
       await addSecret(tmpVault, 'del-me', 'val');
-      const code = await secretCommand(['remove', 'del-me']);
+      const code = await secretCommand(parseCliFlags(['remove', 'del-me']));
       expect(code).toBe(0);
     });
 
     test('remove fails for missing', async () => {
-      const code = await secretCommand(['remove', 'nope']);
+      const code = await secretCommand(parseCliFlags(['remove', 'nope']));
       expect(code).toBe(1);
     });
 
     test('rotate updates secret', async () => {
       await addSecret(tmpVault, 'rot', 'old');
-      const code = await secretCommand(['rotate', 'rot', 'new']);
+      const code = await secretCommand(parseCliFlags(['rotate', 'rot', 'new']));
       expect(code).toBe(0);
     });
 
     test('unknown action returns error', async () => {
-      const code = await secretCommand(['bogus']);
+      const code = await secretCommand(parseCliFlags(['bogus']));
       expect(code).toBe(1);
     });
   });

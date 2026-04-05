@@ -53,8 +53,8 @@ AgentFS/
 
 Before making any changes, read `docs/architecture.md`. Key concepts:
 
-1. **Three-layer architecture:** User Space (vault/) → Native Runtimes (.claude/, .omc/) → Kernel Space (.agentos/)
-2. **Compile pipeline:** `.agentos/manifest.yaml` compiles into CLAUDE.md, .cursorrules, .omc/ via per-agent "drivers" in `compile.d/`
+1. **Three-layer architecture:** User Space (vault/) → Native Runtimes (.claude/, .openclaw/, .cursor/rules/) → Kernel Space (.agentos/)
+2. **Compile pipeline:** `.agentos/manifest.yaml` compiles into CLAUDE.md, .cursor/rules/, .openclaw/ via per-agent "drivers" in `compile.d/`
 3. **Tulving's memory taxonomy:** semantic.md (facts, always loaded) + episodic/ (events, lazy) + procedural/ (skills, lazy)
 4. **AppArmor-style security:** policy.yaml → real enforcement via native agent permissions
 5. **Boot sequence:** SysVinit runlevels 0-6 with progressive disclosure

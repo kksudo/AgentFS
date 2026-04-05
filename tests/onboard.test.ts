@@ -11,6 +11,7 @@ jest.unstable_mockModule('inquirer', () => ({
 
 // Import module after mock configuration for ESM
 const { onboardCommand } = await import('../src/commands/onboard.js');
+const { parseCliFlags } = await import('../src/utils/cli-flags.js');
 
 describe('agentfs onboard', () => {
 
@@ -42,7 +43,7 @@ describe('agentfs onboard', () => {
   });
 
   test('fails if manifest is missing', async () => {
-    const code = await onboardCommand([]);
+    const code = await onboardCommand(parseCliFlags([]));
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No AgentFS vault found'));
   });
@@ -75,7 +76,7 @@ agents:
     });
 
     // 3. Run command
-    const code = await onboardCommand([]);
+    const code = await onboardCommand(parseCliFlags([]));
     expect(code).toBe(0);
 
     // 4. Verify identity file
@@ -118,7 +119,7 @@ agents:
       preferences: '',
     });
 
-    await onboardCommand([]);
+    await onboardCommand(parseCliFlags([]));
 
     // Check that custom content is preserved
     const updatedIdentity = await fs.readFile(path.join(tmpVault, '.agentos', 'init.d', '00-identity.md'), 'utf8');
@@ -147,7 +148,7 @@ agents:
       preferences: '',
     });
 
-    await onboardCommand([]);
+    await onboardCommand(parseCliFlags([]));
 
     const semanticContent = await fs.readFile(path.join(tmpVault, '.agentos', 'memory', 'semantic.md'), 'utf8');
     
@@ -173,7 +174,7 @@ agents:
       preferences: '',
     });
 
-    await onboardCommand([]);
+    await onboardCommand(parseCliFlags([]));
 
     const semanticPath = path.join(tmpVault, '.agentos', 'memory', 'semantic.md');
     // Since everything but name is blank, we shouldn't have created the explicit semantic.md from properties, or it'll be empty.

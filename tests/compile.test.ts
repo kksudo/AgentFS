@@ -26,6 +26,7 @@ const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation((() => 
 const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation((() => true) as any);
 
 const { compileCommand } = await import('../src/commands/compile.js');
+const { parseCliFlags } = await import('../src/utils/cli-flags.js');
 
 describe('commands/compile', () => {
   beforeEach(() => {
@@ -42,7 +43,7 @@ describe('commands/compile', () => {
     (error as any).code = 'ENOENT';
     mockBuildCompileContext.mockRejectedValueOnce(error);
 
-    const code = await compileCommand([]);
+    const code = await compileCommand(parseCliFlags([]));
     
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('No AgentFS vault found'));
@@ -51,7 +52,7 @@ describe('commands/compile', () => {
   test('fails on unknown error during context building', async () => {
     mockBuildCompileContext.mockRejectedValueOnce(new Error('Syntax Error'));
 
-    const code = await compileCommand([]);
+    const code = await compileCommand(parseCliFlags([]));
     
     expect(code).toBe(1);
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Syntax Error'));
@@ -64,7 +65,7 @@ describe('commands/compile', () => {
       }
     });
 
-    const code = await compileCommand(['invalid-agent-name']);
+    const code = await compileCommand(parseCliFlags(['invalid-agent-name']));
     
     expect(code).toBe(1); 
     expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('no supported compilers found'));
@@ -91,17 +92,17 @@ describe('commands/compile', () => {
     });
 
     mockGenerateAgentsFile.mockResolvedValueOnce({
-      path: 'AGENTS.md',
+      path: 'AGENT-MAP.md',
       content: 'map',
       managed: true
     });
 
-    const code = await compileCommand([]);
+    const code = await compileCommand(parseCliFlags([]));
 
     expect(code).toBe(0);
     expect(mockClaudeCompile).toHaveBeenCalled();
     expect(mockGenerateAgentsFile).toHaveBeenCalled();
-    expect(mockWriteOutputs).toHaveBeenCalledTimes(2); // once for claude, once for AGENTS.md
+    expect(mockWriteOutputs).toHaveBeenCalledTimes(2); // once for claude, once for AGENT-MAP.md
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('AgentFS compile complete'));
   });
 
@@ -121,13 +122,13 @@ describe('commands/compile', () => {
     });
 
     mockGenerateAgentsFile.mockResolvedValueOnce({
-      path: 'AGENTS.md',
+      path: 'AGENT-MAP.md',
       content: 'map',
       managed: true
     });
 
     // Pass "--dry-run"
-    const code = await compileCommand(['--dry-run']);
+    const code = await compileCommand(parseCliFlags(['--dry-run']));
 
     expect(code).toBe(0);
     // writeOutputs takes `dryRun` as 3rd parameter.

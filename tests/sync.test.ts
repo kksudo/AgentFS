@@ -4,6 +4,7 @@ import os from 'node:os';
 import { jest } from '@jest/globals';
 import { importFromOmc, exportToOmc, detectDrift } from '../src/sync/sync.js';
 import { importCommand, syncCommand } from '../src/commands/sync.js';
+import { parseCliFlags } from '../src/utils/cli-flags.js';
 
 describe('sync system', () => {
   let tmpVault: string;
@@ -100,7 +101,7 @@ describe('sync system', () => {
 
   describe('detectDrift', () => {
     test('reports missing files', async () => {
-      const results = await detectDrift(tmpVault, ['CLAUDE.md', 'AGENTS.md']);
+      const results = await detectDrift(tmpVault, ['CLAUDE.md', 'AGENT-MAP.md']);
       expect(results).toHaveLength(2);
       expect(results[0].currentHash).toBe('MISSING');
     });
@@ -120,7 +121,7 @@ describe('sync system', () => {
     afterAll(() => { stdoutSpy.mockRestore(); stderrSpy.mockRestore(); });
 
     test('import --help shows usage', async () => {
-      const code = await importCommand(['--help']);
+      const code = await importCommand(parseCliFlags(['--help']));
       expect(code).toBe(0);
     });
 
@@ -135,18 +136,18 @@ describe('sync system', () => {
         '# Semantic Memory\n'
       );
 
-      const code = await importCommand(['memory']);
+      const code = await importCommand(parseCliFlags(['memory']));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('1 imported'));
     });
 
     test('import unknown source fails', async () => {
-      const code = await importCommand(['bogus']);
+      const code = await importCommand(parseCliFlags(['bogus']));
       expect(code).toBe(1);
     });
 
     test('sync shows drift detection', async () => {
-      const code = await syncCommand([]);
+      const code = await syncCommand(parseCliFlags([]));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Drift Detection'));
     });
@@ -156,13 +157,13 @@ describe('sync system', () => {
         path.join(tmpVault, '.agentos/memory/semantic.md'),
         'PREF: test\n'
       );
-      const code = await syncCommand(['push']);
+      const code = await syncCommand(parseCliFlags(['push']));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Exported 1'));
     });
 
     test('sync --help shows usage', async () => {
-      const code = await syncCommand(['--help']);
+      const code = await syncCommand(parseCliFlags(['--help']));
       expect(code).toBe(0);
     });
   });

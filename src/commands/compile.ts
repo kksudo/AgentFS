@@ -23,6 +23,7 @@ import { openclawCompiler } from '../compilers/openclaw.js';
 import { cursorCompiler } from '../compilers/cursor.js';
 import { generateAgentsFile } from '../compilers/agent-map.js';
 import type { AgentCompiler } from '../types/index.js';
+import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 
 // ---------------------------------------------------------------------------
 // Registry of all known compilers.
@@ -34,20 +35,6 @@ const COMPILER_REGISTRY: Record<AgentRuntime, AgentCompiler> = {
   openclaw: openclawCompiler,
   cursor: cursorCompiler,
 };
-
-// ---------------------------------------------------------------------------
-// Output helpers
-// ---------------------------------------------------------------------------
-
-/** Write to stdout. */
-function print(line: string): void {
-  process.stdout.write(line + '\n');
-}
-
-/** Write to stderr. */
-function printErr(line: string): void {
-  process.stderr.write(line + '\n');
-}
 
 // ---------------------------------------------------------------------------
 // Arg parsing
@@ -79,10 +66,11 @@ function isAgentRuntime(value: string): value is AgentRuntime {
  * Accepts an optional positional agent name and a `--dry-run` flag in any
  * position relative to the positional.
  *
- * @param args - Arguments after the `compile` subcommand token
+ * @param flags - CLI flags
  * @returns Parsed compile args
  */
-function parseArgs(args: string[]): CompileArgs {
+function parseArgs(flags: CliFlags): CompileArgs {
+  const args = flags.args;
   const dryRun = args.includes('--dry-run');
   const positionals = args.filter((a) => !a.startsWith('--'));
   const agentArg = positionals[0];
@@ -98,38 +86,41 @@ function parseArgs(args: string[]): CompileArgs {
 // ---------------------------------------------------------------------------
 
 /**
- * Print a human-readable compile summary to stdout.
+ * Format a human-readable compile summary.
  *
  * @param results - All CompileResult objects from agent drivers
  * @param agentMapOutput - The AGENT-MAP.md output
  * @param dryRun - Whether this was a preview run
  */
-function printSummary(
+function formatSummary(
   results: CompileResult[],
   agentMapOutput: CompileOutput,
   dryRun: boolean,
-): void {
+): string {
   const verb = dryRun ? 'Would write' : 'Wrote';
   const prefix = dryRun ? '[dry-run] ' : '';
 
-  print('');
-  print(`${prefix}AgentFS compile complete`);
-  print('');
+  let lines = [];
+  lines.push('');
+  lines.push(`${prefix}AgentFS compile complete`);
+  lines.push('');
 
   for (const result of results) {
-    print(`  Agent: ${result.agent}`);
+    lines.push(`  Agent: ${result.agent}`);
     for (const output of result.outputs) {
       const managed = output.managed ? '' : ' (skipped — not managed)';
-      print(`    ${verb}: ${output.path}${managed}`);
+      lines.push(`    ${verb}: ${output.path}${managed}`);
     }
     if (result.summary) {
-      print(`    ${result.summary}`);
+      lines.push(`    ${result.summary}`);
     }
-    print('');
+    lines.push('');
   }
 
-  print(`  ${verb}: ${agentMapOutput.path} (shared)`);
-  print('');
+  lines.push(`  ${verb}: ${agentMapOutput.path} (shared)`);
+  lines.push('');
+
+  return lines.join('\n');
 }
 
 // ---------------------------------------------------------------------------
@@ -180,19 +171,14 @@ export function validateContext(context: CompileContext): string[] {
  * 4. Writing only outputs where `managed === true` (ownership protection).
  * 5. Printing a human-readable summary.
  *
- * Ownership protection: this function never writes a file where
- * `output.managed === false`. Unmanaged files are reported in the summary
- * as skipped so callers can observe the decision.
- *
- * @param args - Arguments after the `compile` subcommand token
- *               (i.e. `process.argv.slice(3)` when called from the CLI)
+ * @param flags - Parsed CLI flags
  * @returns 0 on success, 1 on error
  */
-export async function compileCommand(args: string[]): Promise<number> {
-  const { agent: targetAgent, dryRun } = parseArgs(args);
+export async function compileCommand(flags: CliFlags): Promise<number> {
+  const { agent: targetAgent, dryRun } = parseArgs(flags);
 
-  // Vault root is always the current working directory.
-  const vaultRoot = process.cwd();
+  // Vault root is from flags, or CWD if not specified.
+  const vaultRoot = flags.targetDir;
 
   // -------------------------------------------------------------------------
   // Build compile context — fails fast if manifest.yaml is missing.
@@ -201,21 +187,16 @@ export async function compileCommand(args: string[]): Promise<number> {
   let context;
   try {
     context = await buildCompileContext(vaultRoot, dryRun);
-  } catch (err) {
-    const isNotFound =
-      err !== null &&
-      typeof err === 'object' &&
-      err !== null &&
-      'code' in err &&
-      (err as NodeJS.ErrnoException).code === 'ENOENT';
+  } catch (err: any) {
+    const isNotFound = err?.code === 'ENOENT';
 
     if (isNotFound) {
-      printErr(
-        'No AgentFS vault found. Run `npx create-agentfs` first.',
-      );
+      printError(flags, 'No AgentFS vault found. Run `npx create-agentfs` first.', 'VAULT_NOT_FOUND');
     } else {
-      printErr(
+      printError(
+        flags,
         `agentfs compile: failed to read manifest — ${err instanceof Error ? err.message : String(err)}`,
+        'MANIFEST_READ_FAILED'
       );
     }
     return 1;
@@ -225,8 +206,11 @@ export async function compileCommand(args: string[]): Promise<number> {
   // Validate context — print warnings to stderr, never block compilation.
   // -------------------------------------------------------------------------
 
-  for (const warning of validateContext(context)) {
-    printErr(warning);
+  const warnings = validateContext(context);
+  if (flags.outputFormat === 'human') {
+    for (const warning of warnings) {
+      process.stderr.write(warning + '\n');
+    }
   }
 
   // -------------------------------------------------------------------------
@@ -239,7 +223,7 @@ export async function compileCommand(args: string[]): Promise<number> {
     // Single-agent mode: use the named compiler if it exists in the registry.
     const compiler = COMPILER_REGISTRY[targetAgent];
     if (compiler === undefined) {
-      printErr(`agentfs compile: no compiler found for agent '${targetAgent}'`);
+      printError(flags, `agentfs compile: no compiler found for agent '${targetAgent}'`, 'COMPILER_NOT_FOUND');
       return 1;
     }
     compilersToRun = [compiler];
@@ -251,8 +235,10 @@ export async function compileCommand(args: string[]): Promise<number> {
       .filter((c): c is AgentCompiler => c !== undefined);
 
     if (compilersToRun.length === 0) {
-      printErr(
+      printError(
+        flags,
         'agentfs compile: no supported compilers found for agents listed in manifest.',
+        'NO_COMPILERS_FOUND'
       );
       return 1;
     }
@@ -285,11 +271,19 @@ export async function compileCommand(args: string[]): Promise<number> {
       await writeOutputs([agentMapOutput], vaultRoot, dryRun);
     }
 
-    printSummary(results, agentMapOutput, dryRun);
+    printResult(flags, formatSummary(results, agentMapOutput, dryRun), {
+      agent: targetAgent || 'all',
+      dryRun,
+      results,
+      agentMap: agentMapOutput,
+      warnings
+    });
     return 0;
   } catch (err) {
-    printErr(
+    printError(
+      flags,
       `agentfs compile: unexpected error — ${err instanceof Error ? err.message : String(err)}`,
+      'COMPILE_ERROR'
     );
     return 1;
   }
