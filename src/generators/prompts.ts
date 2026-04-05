@@ -146,16 +146,15 @@ export async function resolveSetupAnswers(flags: CliFlags): Promise<SetupAnswers
   const input = await resolveInput(flags);
 
   if (input !== null) {
-    // Non-interactive mode: merge JSON input with defaults
-    return createDefaultAnswers({
-      vaultName: input.vaultName as string | undefined,
-      ownerName: input.ownerName as string | undefined,
-      profile: input.profile as Profile | undefined,
-      primaryAgent: input.primaryAgent as AgentRuntime | undefined,
-      supportedAgents: input.supportedAgents as AgentRuntime[] | undefined,
-      modules: input.modules as string[] | undefined,
-      targetDir: flags.targetDir,
-    });
+    // Non-interactive mode: merge only defined JSON fields with defaults
+    const overrides: Partial<SetupAnswers> = { targetDir: flags.targetDir };
+    if (input.vaultName !== undefined) overrides.vaultName = input.vaultName as string;
+    if (input.ownerName !== undefined) overrides.ownerName = input.ownerName as string;
+    if (input.profile !== undefined) overrides.profile = input.profile as Profile;
+    if (input.primaryAgent !== undefined) overrides.primaryAgent = input.primaryAgent as AgentRuntime;
+    if (input.supportedAgents !== undefined) overrides.supportedAgents = input.supportedAgents as AgentRuntime[];
+    if (input.modules !== undefined) overrides.modules = input.modules as string[];
+    return createDefaultAnswers(overrides);
   }
 
   // Interactive mode: run inquirer prompts
