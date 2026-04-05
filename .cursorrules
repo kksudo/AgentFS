@@ -1,0 +1,13 @@
+# AgentFS — Cursor Agent Instructions
+
+Read AGENTS.md in this repository root for full project context, architecture rules, and development guidelines.
+
+## Quick Reference
+
+- TypeScript strict mode, ESM (`"type": "module"`, `.js` extensions in imports)
+- Node.js >= 18.0.0
+- `npm run build` to compile, `npm test` to run 261+ Jest tests
+- Architecture source of truth: `docs/architecture.md`
+- Everything is a file. No databases, no APIs, no cloud dependencies.
+- Compile, don't symlink. Idempotent operations only.
+- Follow existing formats from architecture doc exactly. Don't invent new conventions.

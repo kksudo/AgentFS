@@ -1,0 +1,58 @@
+{
+  "name": "create-agentfs",
+  "version": "0.1.0",
+  "description": "Scaffold your Obsidian vault as a filesystem-based OS for AI agents",
+  "type": "module",
+  "main": "dist/cli.js",
+  "bin": {
+    "create-agentfs": "dist/cli.js",
+    "agentfs": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js",
+    "test": "NODE_OPTIONS='--experimental-vm-modules' jest",
+    "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "agentfs",
+    "ai-agent",
+    "obsidian",
+    "cli",
+    "scaffold",
+    "filesystem",
+    "claude",
+    "cursor"
+  ],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.11.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "files": [
+    "dist/",
+    "templates/"
+  ],
+  "dependencies": {
+    "handlebars": "^4.7.9",
+    "inquirer": "^13.3.2",
+    "js-yaml": "^4.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.2",
+    "@types/inquirer": "^9.0.9",
+    "@types/jest": "^30.0.0",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^25.5.2",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
+    "eslint": "^10.2.0",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9"
+  }
+}

@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+*.js
+*.d.ts
+*.js.map
+!jest.config.js
+!eslint.config.js
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Test
+coverage/
+
+# Runtime (if testing with a real vault)
+.agentos/proc/
+.agentos/secrets/decrypted/
+
+# BMAD Method
+_bmad-output/implementation-artifacts/
+_bmad-output/brainstorming/
+_bmad-output/reports/
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+*.secret
+*.key
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Agent Runtime State (sessions, telemetry, etc.)
+.claude/sessions/
+.claude/mcp/
+.omc/sessions/
+.omc/state/
+.omc/telemetry/
+
+# Agent Configs (Compiled dynamically)
+# Note: CLAUDE.md, AGENTS.md, .cursorrules in repo root ARE tracked (project instructions).
+# We ignore generated configs from testing/scaffolding in vault output:
+
+# OS / Temporary
+.AppleDouble
+.LSOverride
+Icon
+._*
+.Spotlight-V100
+.Trashes
+/tmp/
+
