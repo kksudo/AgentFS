@@ -12,6 +12,8 @@
  * @module cron/runner
  */
 
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { CronJob, CronResult } from './types.js';
 import { consolidateJob } from './jobs/consolidate.js';
 import { heartbeatJob } from './jobs/heartbeat.js';
@@ -52,14 +54,52 @@ export async function runCronJob(
     };
   }
 
+  const lockDir = path.join(vaultRoot, '.agentos/proc/locks');
+  const signalDir = path.join(vaultRoot, '.agentos/proc/signals');
+  const lockPath = path.join(lockDir, `${name}.lock`);
+  const signalPath = path.join(signalDir, `${name}.signal`);
+
+  await fs.mkdir(lockDir, { recursive: true });
+  await fs.mkdir(signalDir, { recursive: true });
+
+  // 1. Check for existing lock
   try {
-    return await job.run(vaultRoot);
+    const stat = await fs.stat(lockPath);
+    // If we're here, the file exists. Check if it's stale (optional, but for now just fail)
+    return {
+      success: false,
+      job: name,
+      message: `Job '${name}' is already running (lock file exists: ${lockPath})`,
+    };
+  } catch {
+    // File doesn't exist — proceed to create it
+  }
+
+  // 2. Create lock
+  await fs.writeFile(lockPath, JSON.stringify({ pid: process.pid, started: new Date().toISOString() }), 'utf8');
+
+  try {
+    const result = await job.run(vaultRoot);
+
+    // 3. Create signal on success
+    if (result.success) {
+      await fs.writeFile(signalPath, JSON.stringify({ lastRun: new Date().toISOString(), status: 'success' }), 'utf8');
+    }
+
+    return result;
   } catch (err) {
     return {
       success: false,
       job: name,
       message: `Job '${name}' failed: ${err instanceof Error ? err.message : String(err)}`,
     };
+  } finally {
+    // 4. Always remove lock
+    try {
+      await fs.unlink(lockPath);
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }
 
