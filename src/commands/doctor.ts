@@ -1,20 +1,7 @@
-/**
- * `agentfs doctor` command — Story 12.1.
- * `agentfs migrate` command — Story 12.2.
- * `agentfs triage` command — Story 12.3.
- *
- * @module commands/doctor
- */
-
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { scanForInjections, readSecurityPolicy } from '../security/parser.js';
-
-function print(line: string): void {
-  process.stdout.write(line + '\n');
-}
-
-
+import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 
 // ---------------------------------------------------------------------------
 // Doctor command — Story 12.1
@@ -26,8 +13,14 @@ interface DoctorCheck {
   message: string;
 }
 
-export async function doctorCommand(_args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
+/**
+ * Entry point for the `agentfs doctor` subcommand.
+ *
+ * @param flags - Parsed CLI flags
+ * @returns 0 on success, 1 on error
+ */
+export async function doctorCommand(flags: CliFlags): Promise<number> {
+  const vaultRoot = flags.targetDir;
   const checks: DoctorCheck[] = [];
 
   // Check 1: .agentos/ exists
@@ -84,25 +77,22 @@ export async function doctorCommand(_args: string[]): Promise<number> {
   }
 
   // Print results
-  print('');
-  print('AgentFS Doctor');
-  print('═'.repeat(50));
-
+  let human = '\nAgentFS Doctor\n' + '═'.repeat(50) + '\n';
   let failures = 0;
   for (const check of checks) {
     const icon = check.passed ? '✓' : '✗';
-    print(`  ${icon} ${check.name}: ${check.message}`);
+    human += `  ${icon} ${check.name}: ${check.message}\n`;
     if (!check.passed) failures++;
   }
 
-  print('');
+  human += '\n';
   if (failures === 0) {
-    print('  All checks passed! Vault is healthy.');
+    human += '  All checks passed! Vault is healthy.\n';
   } else {
-    print(`  ${failures} check(s) failed. Run \`agentfs init\` to fix.`);
+    human += `  ${failures} check(s) failed. Run \`agentfs init\` to fix.\n`;
   }
-  print('');
 
+  printResult(flags, human, { checks, failures });
   return failures > 0 ? 1 : 0;
 }
 
@@ -110,8 +100,14 @@ export async function doctorCommand(_args: string[]): Promise<number> {
 // Triage command — Story 12.3
 // ---------------------------------------------------------------------------
 
-export async function triageCommand(_args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
+/**
+ * Entry point for the `agentfs triage` subcommand.
+ *
+ * @param flags - Parsed CLI flags
+ * @returns 0 on success, 1 on error
+ */
+export async function triageCommand(flags: CliFlags): Promise<number> {
+  const vaultRoot = flags.targetDir;
   const inboxDir = path.join(vaultRoot, 'Inbox');
 
   let files: string[];
@@ -119,31 +115,29 @@ export async function triageCommand(_args: string[]): Promise<number> {
     const entries = await fs.readdir(inboxDir);
     files = entries.filter((f) => f.endsWith('.md'));
   } catch {
-    print('No Inbox/ directory found. Nothing to triage.');
+    printResult(flags, 'No Inbox/ directory found. Nothing to triage.', { files: [] });
     return 0;
   }
 
   if (files.length === 0) {
-    print('Inbox is empty. Nothing to triage.');
+    printResult(flags, 'Inbox is empty. Nothing to triage.', { files: [] });
     return 0;
   }
 
-  print('');
-  print('Inbox Triage');
-  print('═'.repeat(50));
+  let human = '\nInbox Triage\n' + '═'.repeat(50) + '\n';
+  const triageResults: { file: string; suggestion: string }[] = [];
 
   for (const file of files) {
     const content = await fs.readFile(path.join(inboxDir, file), 'utf8');
     const suggestion = suggestFromContent(content, file);
-    print(`  📄 ${file}`);
-    print(`     → Suggested: ${suggestion}`);
-    print('');
+    human += `  📄 ${file}\n     → Suggested: ${suggestion}\n\n`;
+    triageResults.push({ file, suggestion });
   }
 
-  print('  Use `mv` to move files to their suggested locations.');
-  print('  (Automatic moving is disabled by design — user must confirm.)');
-  print('');
+  human += '  Use `mv` to move files to their suggested locations.\n';
+  human += '  (Automatic moving is disabled by design — user must confirm.)\n';
 
+  printResult(flags, human, { triageResults });
   return 0;
 }
 
@@ -165,27 +159,29 @@ function suggestFromContent(content: string, filename: string): string {
 // Migrate command — Story 12.2
 // ---------------------------------------------------------------------------
 
-export async function migrateCommand(_args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
+/**
+ * Entry point for the `agentfs migrate` subcommand.
+ *
+ * @param flags - Parsed CLI flags
+ * @returns 0 on success, 1 on error
+ */
+export async function migrateCommand(flags: CliFlags): Promise<number> {
+  const vaultRoot = flags.targetDir;
 
   // Check if already has .agentos
   try {
     await fs.access(path.join(vaultRoot, '.agentos'));
-    print('This vault already has .agentos/. Use `agentfs doctor` to check health.');
+    printResult(flags, 'This vault already has .agentos/. Use `agentfs doctor` to check health.', { alreadyMigrated: true });
     return 0;
   } catch {
     // Expected — no .agentos yet
   }
 
   // Analyze existing vault
-  print('');
-  print('Migration Analysis');
-  print('═'.repeat(50));
-
   let totalFiles = 0;
   let mdFiles = 0;
   let hasGit = false;
-  let hasOmc = false;
+  let hasOpenClaw = false;
   let hasClaude = false;
 
   try {
@@ -199,18 +195,21 @@ export async function migrateCommand(_args: string[]): Promise<number> {
   }
 
   try { await fs.access(path.join(vaultRoot, '.git')); hasGit = true; } catch { /* */ }
-  try { await fs.access(path.join(vaultRoot, '.omc')); hasOmc = true; } catch { /* */ }
+  try { await fs.access(path.join(vaultRoot, '.openclaw')); hasOpenClaw = true; } catch { /* */ }
   try { await fs.access(path.join(vaultRoot, 'CLAUDE.md')); hasClaude = true; } catch { /* */ }
 
-  print(`  Total files: ${totalFiles}`);
-  print(`  Markdown files: ${mdFiles}`);
-  print(`  Git repo: ${hasGit ? 'yes' : 'no'}`);
-  print(`  OpenClaw config: ${hasOmc ? 'yes' : 'no'}`);
-  print(`  CLAUDE.md: ${hasClaude ? 'yes' : 'no'}`);
-  print('');
-  print('  To migrate, run: agentfs init');
-  print('  This will create .agentos/ without modifying existing files.');
-  print('');
+  let human = '\nMigration Analysis\n' + '═'.repeat(50) + '\n';
+  human += `  Total files: ${totalFiles}\n`;
+  human += `  Markdown files: ${mdFiles}\n`;
+  human += `  Git repo: ${hasGit ? 'yes' : 'no'}\n`;
+  human += `  OpenClaw config: ${hasOpenClaw ? 'yes' : 'no'}\n`;
+  human += `  CLAUDE.md: ${hasClaude ? 'yes' : 'no'}\n\n`;
+  human += '  To migrate, run: agentfs init\n';
+  human += '  This will create .agentos/ without modifying existing files.\n';
+
+  printResult(flags, human, {
+    stats: { totalFiles, mdFiles, hasGit, hasOpenClaw, hasClaude }
+  });
 
   return 0;
 }

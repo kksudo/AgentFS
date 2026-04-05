@@ -38,7 +38,7 @@ import { memoryCommand } from './commands/memory.js';
 import { cronCommand } from './commands/cron.js';
 import { securityCommand } from './commands/security.js';
 import { secretCommand } from './commands/secret.js';
-import { importCommand, syncCommand } from './commands/sync.js';
+import { syncCommand } from './commands/sync.js';
 import { doctorCommand, triageCommand, migrateCommand } from './commands/doctor.js';
 import { runSetupPrompts } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
@@ -259,37 +259,48 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     return 0;
   }
 
-  // Detect if running as create-agentfs
+  // Decode if running as create-agentfs
   const isCreateBin = argv[1] && (argv[1].endsWith('create-agentfs') || argv[1].endsWith('create-agentfs.js'));
+
+  // Parse common flags once for all subcommands
+  const flags = parseCliFlags(args);
+  const effectiveSubcommand = flags.args[0];
 
   // If no arguments or the command starts with a flag (like npx create-agentfs --non-interactive)
   // or it is explicitly "init", run the scaffolder.
-  if (subcommand === undefined || subcommand.startsWith('-') || subcommand === 'init' || (isCreateBin && !isSubcommand(subcommand))) {
+  if (
+    effectiveSubcommand === undefined ||
+    effectiveSubcommand === 'init' ||
+    (isCreateBin && !isSubcommand(effectiveSubcommand))
+  ) {
     // If it's pure "init", slice it out so we just parse the trailing args.
-    const scaffoldArgs = subcommand === 'init' ? args.slice(1) : args;
+    const scaffoldArgs = effectiveSubcommand === 'init' ? args.filter(a => a !== 'init') : args;
     return runScaffold(scaffoldArgs);
   }
 
   // Known subcommand — dispatch to implemented handlers, stub the rest.
-  if (isSubcommand(subcommand)) {
-    const subArgs = args.slice(1);
-    if (subcommand === 'compile') return compileCommand(subArgs);
-    if (subcommand === 'onboard') return onboardCommand(subArgs);
-    if (subcommand === 'memory') return memoryCommand(subArgs);
-    if (subcommand === 'cron') return cronCommand(subArgs);
-    if (subcommand === 'security') return securityCommand(subArgs);
-    if (subcommand === 'secret') return secretCommand(subArgs);
-    if (subcommand === 'import') return importCommand(subArgs);
-    if (subcommand === 'sync') return syncCommand(subArgs);
-    if (subcommand === 'doctor') return doctorCommand(subArgs);
-    if (subcommand === 'triage') return triageCommand(subArgs);
-    if (subcommand === 'migrate') return migrateCommand(subArgs);
-    printStub(subcommand);
+  if (isSubcommand(effectiveSubcommand)) {
+    // Strip the subcommand name from args if it's first (normal case)
+    if (flags.args[0] === effectiveSubcommand) {
+      flags.args.shift();
+    }
+
+    if (effectiveSubcommand === 'compile') return compileCommand(flags);
+    if (effectiveSubcommand === 'onboard') return onboardCommand(flags);
+    if (effectiveSubcommand === 'memory') return memoryCommand(flags);
+    if (effectiveSubcommand === 'cron') return cronCommand(flags);
+    if (effectiveSubcommand === 'security') return securityCommand(flags);
+    if (effectiveSubcommand === 'secret') return secretCommand(flags);
+    if (effectiveSubcommand === 'sync') return syncCommand(flags);
+    if (effectiveSubcommand === 'doctor') return doctorCommand(flags);
+    if (effectiveSubcommand === 'triage') return triageCommand(flags);
+    if (effectiveSubcommand === 'migrate') return migrateCommand(flags);
+    printStub(effectiveSubcommand);
     return 0;
   }
 
   // Unknown subcommand → usage + non-zero exit.
-  printErr(`agentfs: unknown subcommand '${subcommand}'`);
+  printErr(`agentfs: unknown subcommand '${effectiveSubcommand}'`);
   printUsage();
   return 1;
 }

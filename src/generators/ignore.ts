@@ -34,9 +34,9 @@ const GITIGNORE_LINES: readonly string[] = [
   '# Agent sessions and runtime data',
   '.claude/sessions/',
   '.claude/mcp/',
-  '.omc/sessions/',
-  '.omc/state/',
-  '.omc/telemetry/',
+  '.openclaw/sessions/',
+  '.openclaw/state/',
+  '.openclaw/telemetry/',
   '.cursor/',
   '',
   '# Obsidian runtime',
@@ -66,7 +66,7 @@ People/**/private-notes.md
 
 # Other agent sessions
 .claude/sessions/
-.omc/sessions/
+.openclaw/sessions/
 `;
 
 // ---------------------------------------------------------------------------
