@@ -215,19 +215,13 @@ agentfs sync                          # bidirectional manifest ↔ compiled outp
 
 ## Roadmap
 
-All phases (1 through 11) have been successfully completed:
-- ✅ Phase 1:    Spec → review → approve
-- ✅ Phase 2:    MVP — npx create-agentfs: personal + compile.d/claude
-- ✅ Phase 2.5:  Onboard — agent-led interview
-- ✅ Phase 3:    Memory — Tulving taxonomy + confidence scoring
-- ✅ Phase 4:    Cron — consolidation + distillation + inbox-triage
-- ✅ Phase 5:    Security — policy.yaml + AppArmor + input validation
-- ✅ Phase 6:    Secrets — SOPS/age + exec --with-secrets
-- ✅ Phase 7:    Sync — bidirectional manifest ↔ CLAUDE.md
-- ✅ Phase 8:    compile.d/openclaw + memory sync
-- ✅ Phase 9:    Company + Shared profiles
-- ✅ Phase 10:   Full CLI (doctor + agnix, triage, migrate)
-- ✅ Phase 11:   Community — npm publish, contributing guide
+- Obsidian vault procedural skills (inbox-process, daily-review, content-pipeline)
+- `agentfs migrate` — automated vault migration with wikilink fix
+- Plugin system for community modules (`agentfs-module-{name}`)
+- Security module marketplace (`agentfs-security-{domain}`)
+- Multi-vault sync — transfer learned patterns between projects
+- Obsidian companion plugin (optional UI for `.agentos/proc/status.md`)
+- Auto-compile triggers (file watcher, git hooks)
 
 ## Contributing
 
