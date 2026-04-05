@@ -28,7 +28,7 @@
     "claude",
     "cursor"
   ],
-  "author": "",
+  "author": "Kazakov Kirill",
   "license": "MIT",
   "packageManager": "pnpm@10.11.0",
   "engines": {
