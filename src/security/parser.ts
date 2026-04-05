@@ -25,7 +25,7 @@ export const DEFAULT_POLICY: SecurityPolicy = {
     default: 'rw',
     allow_write: ['**/*.md', '**/*.yaml', '**/*.json'],
     ask_write: ['.agentos/**', '.claude/**'],
-    deny_read: ['.env', '**/*.pem', '**/*.key'],
+    deny_read: ['.agentos/secrets/**', '.env', '**/*.pem', '**/*.key'],
     deny_write: ['.git/**', 'node_modules/**'],
   },
   input_validation: {
