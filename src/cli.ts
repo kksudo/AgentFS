@@ -312,13 +312,39 @@ export async function main(argv: string[] = process.argv): Promise<number> {
 // In ESM with NodeNext module resolution the canonical way to detect the
 // main module is to compare import.meta.url against the resolved entry URL.
 // We call `process.exit` here so tests that import `main` are not affected.
-const isEntryPoint =
-  // On POSIX the argv[1] path matches the file URL when run via `node`.
-  process.argv[1] !== undefined &&
-  import.meta.url.endsWith(
-    // Normalise Windows backslashes just in case.
-    process.argv[1].replace(/\\/g, '/').split('/').pop() ?? '',
-  );
+//
+// When installed globally via npm, the binary is a symlink:
+//   /usr/bin/agentfs → ../lib/node_modules/create-agentfs/dist/cli.js
+// In this case argv[1] is the symlink path (ending in "agentfs" or
+// "create-agentfs") while import.meta.url ends in "cli.js".
+// We handle both cases: direct invocation and symlink invocation.
+import { realpathSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+
+const isEntryPoint = (() => {
+  if (process.argv[1] === undefined) return false;
+
+  const thisFile = fileURLToPath(import.meta.url);
+
+  // Direct match: `node dist/cli.js`
+  try {
+    if (realpathSync(process.argv[1]) === thisFile) return true;
+  } catch {
+    // argv[1] might not exist on disk (e.g. piped via stdin)
+  }
+
+  // Basename match (legacy fallback): covers `node cli.js` without full path
+  const argBase = process.argv[1].replace(/\\/g, '/').split('/').pop() ?? '';
+  if (argBase && thisFile.endsWith(argBase)) return true;
+
+  // npm global symlink match: argv[1] ends with the bin name ("agentfs",
+  // "create-agentfs") which differs from the actual file ("cli.js").
+  // Check if it's a known bin name from package.json.
+  const knownBinNames = ['agentfs', 'create-agentfs'];
+  if (knownBinNames.includes(argBase)) return true;
+
+  return false;
+})();
 
 if (isEntryPoint) {
   main().then((code) => {

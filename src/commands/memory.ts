@@ -263,15 +263,19 @@ export async function memoryCommand(flags: CliFlags): Promise<number> {
     return 0;
   }
 
+  // Remove the action name from args so subhandlers see only their own args.
+  // e.g. ['show', 'episodic', '2026-04-01'] → ['episodic', '2026-04-01']
+  flags.args.shift();
+
   if (action === 'show') {
-    const target = flags.args[1];
+    const target = flags.args[0];
 
     if (target === 'episodic') {
-      return showEpisodic(flags, flags.args[2]);
+      return showEpisodic(flags, flags.args[1]);
     }
 
     if (target === 'procedural') {
-      return showProcedural(flags, flags.args[2]);
+      return showProcedural(flags, flags.args[1]);
     }
 
     return showSemantic(flags);

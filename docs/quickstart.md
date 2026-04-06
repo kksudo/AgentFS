@@ -9,20 +9,46 @@ This guide will help you get an AgentFS vault up and running in under 5 minutes.
 
 ## 1. Setup
 
-```bash
-# Scaffold interactively
-npx create-agentfs my-vault
+### New vault (interactive)
 
-# Go into your new vault
+```bash
+npx create-agentfs my-vault
 cd my-vault
 ```
 
-Or if you already have a vault and want to add AgentFS to it:
+### Existing vault (interactive)
+
+If you already have a vault and want to add AgentFS to it:
 
 ```bash
 cd my-existing-vault
 npx create-agentfs .
 ```
+
+### Non-interactive / CI mode
+
+Pass answers as JSON to skip prompts. This is also useful for AI agents:
+
+```bash
+npx create-agentfs . --json '{
+  "vaultName": "my-vault",
+  "ownerName": "Your Name",
+  "profile": "personal",
+  "primaryAgent": "claude",
+  "supportedAgents": ["claude", "cursor"],
+  "modules": []
+}'
+```
+
+Or read answers from a file:
+
+```bash
+npx create-agentfs . --config setup.yaml
+```
+
+> **Note:** Using `--non-interactive` without `--json` or `--config` will use
+> default values (`my-vault`, `user`). Always pass `--json` to customize your
+> vault name and identity.
 
 ## 2. Onboarding (Interactive)
 
@@ -60,7 +86,10 @@ Whenever you change your preferences in the kernel, just run `agentfs compile` a
 
 ```bash
 # Add a fact to the AI's long-term memory
-agentfs memory add "I strictly use TypeScript strict mode."
+agentfs memory add semantic --json '{"type": "PREF", "content": "strictly use TypeScript strict mode"}'
+
+# Show what the agent remembers
+agentfs memory show
 
 # Check the health of your vault infrastructure
 agentfs doctor
