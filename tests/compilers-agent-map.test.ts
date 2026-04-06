@@ -43,7 +43,7 @@ describe('compilers/agent-map', () => {
 
     const output = await generateAgentsFile(mockContext);
 
-    expect(output.path).toBe('AGENTS.md');
+    expect(output.path).toBe('AGENT-MAP.md');
     expect(output.managed).toBe(true);
     expect(output.content).toContain('Target: Test Vault');
     expect(output.content).toContain('Owner: Alice');

@@ -1,7 +1,7 @@
 ---
 name: code-review
 description: "Use when reviewing code changes, PRs, or completed stories. Two-stage review: spec compliance first, then code quality."
-triggers: [review, pr, ревью, code review, pull request]
+triggers: [review, pr, code review, pull request]
 use_count: 0
 ---
 
@@ -35,11 +35,11 @@ Is the code well-written?
 
 ## Rationalization Resistance
 
-| Мысль | Реальность |
-|-------|-----------|
-| "Код работает, значит всё ок" | Работает ≠ правильно. Проверь spec compliance. |
-| "Мелочи, не буду придираться" | Мелочи накапливаются. Заметил — скажи. |
-| "Автор знает лучше" | Автор мог пропустить. Свежий взгляд — ценность ревью. |
+| Agent thought | Reality |
+|--------------|---------|
+| "The code works, so it's fine" | Works != correct. Check spec compliance. |
+| "Minor issues, not worth mentioning" | Minor issues accumulate. If you noticed it — say it. |
+| "The author knows better" | The author may have missed something. Fresh perspective is the value of review. |
 
 ## Output Format
 

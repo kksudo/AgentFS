@@ -15,27 +15,23 @@ import {
   removeSecret,
   listSecrets,
   rotateSecret,
+  getSecret,
 } from '../secrets/vault.js';
-
-// ---------------------------------------------------------------------------
-// Output helpers
-// ---------------------------------------------------------------------------
-
-function print(line: string): void {
-  process.stdout.write(line + '\n');
-}
-
-function printErr(line: string): void {
-  process.stderr.write(line + '\n');
-}
+import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
-export async function secretCommand(args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
-  const action = args[0];
+/**
+ * Entry point for the `agentfs secret` subcommand.
+ *
+ * @param flags - Parsed CLI flags
+ * @returns 0 on success, 1 on error
+ */
+export async function secretCommand(flags: CliFlags): Promise<number> {
+  const vaultRoot = flags.targetDir;
+  const action = flags.args[0];
 
   if (action === undefined || action === '--help' || action === '-h') {
     printSecretUsage();
@@ -43,28 +39,28 @@ export async function secretCommand(args: string[]): Promise<number> {
   }
 
   if (action === 'add') {
-    const name = args[1];
-    const value = args[2];
+    const name = flags.args[1];
+    const value = flags.args[2];
     if (!name || !value) {
-      printErr('agentfs secret add: requires <name> <value>');
+      printError(flags, 'agentfs secret add: requires <name> <value>', 'MISSING_ARGUMENTS');
       return 1;
     }
     await addSecret(vaultRoot, name, value);
-    print(`✓ Secret '${name}' added. Reference: \${{secret:${name}}}`);
+    printResult(flags, `✓ Secret '${name}' added. Reference: \${{secret:${name}}}`, { name });
     return 0;
   }
 
   if (action === 'remove') {
-    const name = args[1];
+    const name = flags.args[1];
     if (!name) {
-      printErr('agentfs secret remove: requires <name>');
+      printError(flags, 'agentfs secret remove: requires <name>', 'MISSING_NAME');
       return 1;
     }
     const removed = await removeSecret(vaultRoot, name);
     if (removed) {
-      print(`✓ Secret '${name}' removed.`);
+      printResult(flags, `✓ Secret '${name}' removed.`, { name });
     } else {
-      printErr(`Secret '${name}' not found.`);
+      printError(flags, `Secret '${name}' not found.`, 'SECRET_NOT_FOUND');
       return 1;
     }
     return 0;
@@ -73,51 +69,62 @@ export async function secretCommand(args: string[]): Promise<number> {
   if (action === 'list') {
     const names = await listSecrets(vaultRoot);
     if (names.length === 0) {
-      print('No secrets stored.');
+      printResult(flags, 'No secrets stored.', { secrets: [] });
     } else {
-      print('');
-      print('Stored Secrets');
-      print('═'.repeat(50));
+      let human = '\nStored Secrets\n' + '═'.repeat(50) + '\n';
       for (const name of names) {
-        print(`  🔑 ${name}`);
+        human += `  🔑 ${name}\n`;
       }
-      print('');
-      print(`  Total: ${names.length} secret(s)`);
-      print('');
+      human += `\n  Total: ${names.length} secret(s)\n`;
+      printResult(flags, human, { secrets: names });
     }
     return 0;
   }
 
   if (action === 'rotate') {
-    const name = args[1];
-    const newValue = args[2];
+    const name = flags.args[1];
+    const newValue = flags.args[2];
     if (!name || !newValue) {
-      printErr('agentfs secret rotate: requires <name> <new-value>');
+      printError(flags, 'agentfs secret rotate: requires <name> <new-value>', 'MISSING_ARGUMENTS');
       return 1;
     }
     const rotated = await rotateSecret(vaultRoot, name, newValue);
     if (rotated) {
-      print(`✓ Secret '${name}' rotated.`);
+      printResult(flags, `✓ Secret '${name}' rotated.`, { name });
     } else {
-      printErr(`Secret '${name}' not found.`);
+      printError(flags, `Secret '${name}' not found.`, 'SECRET_NOT_FOUND');
       return 1;
     }
     return 0;
   }
 
-  printErr(`agentfs secret: unknown action '${action}'`);
-  printSecretUsage();
+  if (action === 'get') {
+    const name = flags.args[1];
+    if (!name) {
+      printError(flags, 'agentfs secret get: requires <name>', 'MISSING_NAME');
+      return 1;
+    }
+    const value = await getSecret(vaultRoot, name);
+    if (value !== null) {
+      // In JSON mode, include the value. In human mode, just print it.
+      printResult(flags, value, { name, value });
+    } else {
+      printError(flags, `Secret '${name}' not found or invalid.`, 'SECRET_NOT_FOUND');
+      return 1;
+    }
+    return 0;
+  }
+
+  printError(flags, `agentfs secret: unknown action '${action}'`, 'UNKNOWN_ACTION');
   return 1;
 }
 
 function printSecretUsage(): void {
-  print('');
-  print('Usage: agentfs secret <action>');
-  print('');
-  print('Actions:');
-  print('  add <name> <value>    Add an encrypted secret');
-  print('  remove <name>         Remove a secret');
-  print('  list                  List secret names (not values)');
-  print('  rotate <name> <val>   Rotate (re-encrypt) a secret');
-  print('');
+  process.stdout.write('\nUsage: agentfs secret <action>\n\n');
+  process.stdout.write('Actions:\n');
+  process.stdout.write('  add <name> <value>    Add an encrypted secret\n');
+  process.stdout.write('  remove <name>         Remove a secret\n');
+  process.stdout.write('  list                  List secret names (not values)\n');
+  process.stdout.write('  rotate <name> <val>   Rotate (re-encrypt) a secret\n');
+  process.stdout.write('  get <name>            Get the plaintext value of a secret\n\n');
 }

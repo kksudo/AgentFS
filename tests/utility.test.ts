@@ -4,6 +4,7 @@ import os from 'node:os';
 import { jest } from '@jest/globals';
 import { generateCompanyProfile, generateSharedProfile } from '../src/generators/profiles.js';
 import { doctorCommand, triageCommand, migrateCommand } from '../src/commands/doctor.js';
+import { parseCliFlags } from '../src/utils/cli-flags.js';
 
 describe('epics 11-12', () => {
   let tmpVault: string;
@@ -56,7 +57,7 @@ describe('epics 11-12', () => {
   });
 
   test('doctor reports missing .agentos', async () => {
-    const code = await doctorCommand([]);
+    const code = await doctorCommand(parseCliFlags([]));
     expect(code).toBe(1);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('not found'));
   });
@@ -66,20 +67,20 @@ describe('epics 11-12', () => {
     await fs.mkdir(path.join(tmpVault, '.agentos/memory'), { recursive: true });
     await fs.writeFile(path.join(tmpVault, '.agentos/manifest.yaml'), 'version: "1.0"\n');
 
-    const code = await doctorCommand([]);
+    const code = await doctorCommand(parseCliFlags([]));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('All checks passed'));
   });
 
   test('triage with no inbox', async () => {
-    const code = await triageCommand([]);
+    const code = await triageCommand(parseCliFlags([]));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('No Inbox'));
   });
 
   test('triage with empty inbox', async () => {
     await fs.mkdir(path.join(tmpVault, 'Inbox'));
-    const code = await triageCommand([]);
+    const code = await triageCommand(parseCliFlags([]));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('empty'));
   });
@@ -89,21 +90,21 @@ describe('epics 11-12', () => {
     await fs.writeFile(path.join(tmpVault, 'Inbox/project-notes.md'), 'Notes about project sprint');
     await fs.writeFile(path.join(tmpVault, 'Inbox/2026-04-04.md'), 'Daily standup');
 
-    const code = await triageCommand([]);
+    const code = await triageCommand(parseCliFlags([]));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('project-notes.md'));
   });
 
   test('migrate reports already migrated vault', async () => {
     await fs.mkdir(path.join(tmpVault, '.agentos'));
-    const code = await migrateCommand([]);
+    const code = await migrateCommand(parseCliFlags([]));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('already has .agentos'));
   });
 
   test('migrate analyzes unmigrated vault', async () => {
     await fs.writeFile(path.join(tmpVault, 'notes.md'), '# Notes');
-    const code = await migrateCommand([]);
+    const code = await migrateCommand(parseCliFlags([]));
     expect(code).toBe(0);
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Migration Analysis'));
   });

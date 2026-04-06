@@ -135,19 +135,19 @@ export function registerHelpers(): void {
     if (!paths || typeof paths !== 'object') return '';
     // Inline descriptions keyed by FHS path name — matches FHS_DESCRIPTIONS from fhs-mapping.ts
     const desc: Record<string, string> = {
-      tmp: 'Единственная точка входа для новых заметок',
-      log: 'Ежедневные журналы',
-      spool: 'Очереди задач, приоритеты',
-      home: 'Активные проекты',
-      srv: 'Контент для публикации',
-      usr_share: 'Знания вне проектов',
-      proc_people: 'Активные контакты',
-      etc: 'Системная конфигурация',
-      archive: 'Завершённое',
-      home_contracts: 'Клиентские проекты',
+      tmp: 'Entry point for new notes',
+      log: 'Daily journals',
+      spool: 'Task queues and priorities',
+      home: 'Active projects',
+      srv: 'Content for publishing',
+      usr_share: 'Shared knowledge base',
+      proc_people: 'Active contacts',
+      etc: 'System configuration',
+      archive: 'Completed and archived',
+      home_contracts: 'Client projects',
       usr_local_career: 'Job search pipeline',
-      home_user: 'Профессиональная база знаний',
-      usr_share_media: 'Медиафайлы',
+      home_user: 'Professional knowledge base',
+      usr_share_media: 'Media assets',
     };
     return Object.entries(paths)
       .filter(([, v]) => v !== undefined)

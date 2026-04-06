@@ -4,6 +4,7 @@ import os from 'node:os';
 import { jest } from '@jest/globals';
 import { runCronJob, runAllCronJobs, CRON_REGISTRY } from '../src/cron/runner.js';
 import { cronCommand } from '../src/commands/cron.js';
+import { parseCliFlags } from '../src/utils/cli-flags.js';
 
 describe('cron system', () => {
   let tmpVault: string;
@@ -134,26 +135,26 @@ describe('cron system', () => {
     });
 
     test('prints usage with no args', async () => {
-      const code = await cronCommand([]);
+      const code = await cronCommand(parseCliFlags([]));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Usage: agentfs cron'));
     });
 
     test('lists jobs', async () => {
-      const code = await cronCommand(['list']);
+      const code = await cronCommand(parseCliFlags(['list']));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('consolidate'));
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('heartbeat'));
     });
 
     test('run requires job name', async () => {
-      const code = await cronCommand(['run']);
+      const code = await cronCommand(parseCliFlags(['run']));
       expect(code).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('job name required'));
     });
 
     test('run executes a specific job', async () => {
-      const code = await cronCommand(['run', 'heartbeat']);
+      const code = await cronCommand(parseCliFlags(['run', 'heartbeat']));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Heartbeat written'));
     });
@@ -164,13 +165,13 @@ describe('cron system', () => {
         'PREF: test\n'
       );
 
-      const code = await cronCommand(['run-all']);
+      const code = await cronCommand(parseCliFlags(['run-all']));
       expect(code).toBe(0);
       expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('Cron Run Results'));
     });
 
     test('unknown action returns error', async () => {
-      const code = await cronCommand(['bogus']);
+      const code = await cronCommand(parseCliFlags(['bogus']));
       expect(code).toBe(1);
       expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining("unknown action 'bogus'"));
     });

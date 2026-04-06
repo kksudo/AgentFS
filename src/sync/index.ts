@@ -4,8 +4,6 @@
  */
 
 export {
-  importFromOmc,
   detectDrift,
-  exportToOmc,
-} from './sync.js';
-export type { DriftResult } from './sync.js';
+} from './openclaw-sync.js';
+export type { DriftResult } from './openclaw-sync.js';

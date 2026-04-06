@@ -1,7 +1,7 @@
 ---
 name: debugging
 description: "Use when debugging failures, errors, or unexpected behavior. 4-phase systematic approach with 3-failure circuit breaker."
-triggers: [debug, error, bug, fix, broken, failing, не работает, ошибка]
+triggers: [debug, error, bug, fix, broken, failing]
 use_count: 0
 ---
 
@@ -45,8 +45,8 @@ Step back and question the architecture, not the implementation.
 
 ## Rationalization Resistance
 
-| Мысль | Реальность |
-|-------|-----------|
-| "Попробую ещё раз то же самое" | 3 раза не сработало = неправильная гипотеза. Смени подход. |
-| "Наверное баг в библиотеке" | Скорее всего баг в твоём коде. Проверь сначала. |
-| "Я знаю в чём дело, не буду воспроизводить" | Без воспроизведения ты не знаешь. Ты предполагаешь. |
+| Agent thought | Reality |
+|--------------|---------|
+| "Let me try the same thing again" | 3 failures = wrong hypothesis. Change approach. |
+| "Probably a library bug" | Most likely your code. Check yours first. |
+| "I know what it is, no need to reproduce" | Without reproduction you don't know. You assume. |

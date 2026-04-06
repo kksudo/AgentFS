@@ -25,6 +25,8 @@ You have access to persistent, cross-session memory. This means if you learn a f
   ```markdown
   FACT: [active] The project uses React Native and Expo.
   PREF: [active] The user hates verbose code explanations; respond directly.
+  AVOID: don't suggest LangChain or heavy frameworks.
+  PATTERN: [confidence:0.7] prefers morning code reviews.
   ```
 - Do not delete old lines in `semantic.md`. Append new lines.
 

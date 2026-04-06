@@ -21,7 +21,7 @@ const PROFILES: { name: string; value: Profile }[] = [
 /** Available agent runtimes. */
 const AGENTS: { name: string; value: AgentRuntime }[] = [
   { name: 'Claude Code', value: 'claude' },
-  { name: 'OpenClaw / OMC', value: 'openclaw' },
+  { name: 'OpenClaw', value: 'openclaw' },
   { name: 'Cursor', value: 'cursor' },
 ];
 
@@ -130,3 +130,4 @@ export function createDefaultAnswers(overrides: Partial<SetupAnswers> = {}): Set
     ...overrides,
   };
 }
+

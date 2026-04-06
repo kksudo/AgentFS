@@ -172,6 +172,23 @@ export async function rotateSecret(
 }
 
 /**
+ * Get a single secret's plaintext value.
+ *
+ * @param vaultRoot - Vault root path
+ * @param name      - Secret name to fetch
+ * @returns Plaintext value or null if not found
+ */
+export async function getSecret(
+  vaultRoot: string,
+  name: string,
+): Promise<string | null> {
+  const vault = await readVault(vaultRoot);
+  const encrypted = vault.secrets[name];
+  if (!encrypted || !isEncoded(encrypted)) return null;
+  return decode(encrypted);
+}
+
+/**
  * Decrypt all secrets to a key-value map (for exec proxy).
  * WARNING: Returns plaintext — only use in-memory for child process env.
  *

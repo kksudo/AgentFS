@@ -1,96 +1,61 @@
-/**
- * `agentfs sync` / `agentfs import` command implementations.
- *
- * @module commands/sync
- */
-
-import { importFromOmc, exportToOmc, detectDrift } from '../sync/index.js';
-
-function print(line: string): void {
-  process.stdout.write(line + '\n');
-}
-
-function printErr(line: string): void {
-  process.stderr.write(line + '\n');
-}
-
-/**
- * Entry point for `agentfs import` subcommand.
- */
-export async function importCommand(args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
-  const target = args[0];
-
-  if (target === undefined || target === '--help') {
-    print('');
-    print('Usage: agentfs import <source>');
-    print('');
-    print('Sources:');
-    print('  memory       Import facts from .omc/project-memory.json');
-    print('');
-    return 0;
-  }
-
-  if (target === 'memory') {
-    const result = await importFromOmc(vaultRoot);
-
-    if (result.errors.length > 0) {
-      for (const err of result.errors) {
-        printErr(`  ✗ ${err}`);
-      }
-      if (result.imported === 0 && result.skipped === 0) return 1;
-    }
-
-    print(`✓ Import complete: ${result.imported} imported, ${result.skipped} skipped.`);
-    return 0;
-  }
-
-  printErr(`agentfs import: unknown source '${target}'`);
-  return 1;
-}
+import { detectDrift } from '../sync/index.js';
+import { CliFlags, printResult } from '../utils/cli-flags.js';
 
 /**
  * Entry point for `agentfs sync` subcommand.
+ *
+ * Checks for drift between the kernel manifest and compiled agent-native outputs.
+ *
+ * @param flags - Parsed CLI flags
+ * @returns 0 on success, 1 on error
  */
-export async function syncCommand(args: string[]): Promise<number> {
-  const vaultRoot = process.cwd();
-  const action = args[0];
+export async function syncCommand(flags: CliFlags): Promise<number> {
+  const vaultRoot = flags.targetDir;
+  const action = flags.args[0];
 
   if (action === '--help' || action === '-h') {
-    print('');
-    print('Usage: agentfs sync [action]');
-    print('');
-    print('Actions:');
-    print('  (none)       Check drift between compiled outputs and manifest');
-    print('  push         Export canonical memory to .omc/ format');
-    print('');
+    printSyncUsage();
     return 0;
   }
 
-  if (action === 'push') {
-    const count = await exportToOmc(vaultRoot);
-    if (count === 0) {
-      print('No semantic memory to export.');
-    } else {
-      print(`✓ Exported ${count} entries to .omc/project-memory.json`);
-    }
-    return 0;
-  }
+  // Managed files across all supported agents
+  const managedFiles = [
+    'CLAUDE.md',
+    '.claude/settings.json',
+    '.cursor/rules/agentfs-global.mdc',
+    '.openclaw/AGENTS.md',
+    '.openclaw/SOUL.md',
+    '.openclaw/IDENTITY.md',
+    '.openclaw/USER.md',
+    '.openclaw/TOOLS.md',
+    'AGENT-MAP.md',
+  ];
 
-  // Default: drift detection
-  const managedFiles = ['CLAUDE.md', 'AGENTS.md'];
   const results = await detectDrift(vaultRoot, managedFiles);
 
-  print('');
-  print('Drift Detection');
-  print('═'.repeat(50));
+  let human = '\nDrift Detection\n' + '═'.repeat(50) + '\n';
+  let driftedCount = 0;
+
   for (const r of results) {
     const status = r.currentHash === 'MISSING' ? '❌ missing' : '✓ present';
-    print(`  ${status}  ${r.file}`);
+    if (r.currentHash === 'MISSING') driftedCount++;
+    human += `  ${status.padEnd(10)}  ${r.file}\n`;
   }
-  print('');
-  print('Tip: Run `agentfs compile` to regenerate managed files.');
-  print('');
 
+  if (driftedCount > 0) {
+    human += `\nFound ${driftedCount} missing managed file(s).\n`;
+    human += 'Tip: Run `agentfs compile` to regenerate all managed files.\n';
+  } else {
+    human += '\n✓ All managed files are present.\n';
+  }
+
+  printResult(flags, human, { driftResults: results });
   return 0;
+}
+
+function printSyncUsage(): void {
+  process.stdout.write('\nUsage: agentfs sync\n\n');
+  process.stdout.write('Description:\n');
+  process.stdout.write('  Checks for drift between the kernel manifest and compiled agent-native outputs.\n');
+  process.stdout.write('  It verifies that all managed files (CLAUDE.md, .cursor/rules/, .openclaw/, etc.) exist.\n\n');
 }

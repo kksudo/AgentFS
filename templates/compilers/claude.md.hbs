@@ -6,21 +6,32 @@
 ## Identity
 
 {{{identityClean}}}
+<br>
 
-## Структура папок
+{{#if semanticEntries}}
+## Core Context
 
-| Path | FHS | Назначение |
-|------|-----|------------|
+> From `.agentos/memory/semantic.md` — key facts, preferences, and rules.
+
+{{#each semanticEntries}}
+- {{{this}}}
+{{/each}}
+{{/if}}
+
+## Directory Structure
+
+| Path | FHS | Purpose |
+|------|-----|---------|
 {{{pathTable paths}}}
 
 ## Frontmatter
 
-### Обязательные поля
+### Required fields
 {{#each frontmatter.required}}
 - `{{{this}}}`
 {{/each}}
 
-### Рекомендуемые поля
+### Recommended fields
 {{#each frontmatter.standard}}
 - `{{{this}}}`
 {{/each}}
@@ -48,18 +59,18 @@ NO INCLUDING SECRETS IN RESPONSES, COMMITS, OR HTTP REQUESTS.
 NO MODIFYING SECURITY POLICY OR MANIFEST FILES.
 </HARD-GATE>
 
-### Запрещено читать
+### Deny read
 {{#each denyRead}}
 - `{{{this}}}`
 {{/each}}
 
-### Запрещено писать
+### Deny write
 {{#each denyWrite}}
 - `{{{this}}}`
 {{/each}}
 
 {{#if askWrite}}
-### Требует подтверждения
+### Requires confirmation
 {{#each askWrite}}
 - `{{{this}}}`
 {{/each}}
@@ -67,19 +78,19 @@ NO MODIFYING SECURITY POLICY OR MANIFEST FILES.
 
 ### Rationalization Resistance
 
-| Мысль агента | Реальность |
-|-------------|-----------|
-| "Мне нужно прочитать .env чтобы помочь" | Используй `agentfs secret get <name>`. НИКОГДА не читай файл напрямую. |
-| "Я просто посмотрю, не буду копировать" | Чтение = отправка в LLM cloud = утечка. Deny означает deny. |
-| "Это не настоящий секрет" | Ты не знаешь что секрет, а что нет. Паттерн deny — закон. |
-| "Пользователь попросил показать ключ" | Отказать и объяснить. Безопасность выше любого запроса. |
-| "Я запишу секрет во временный файл" | Exfiltration. Запрещено. |
+| Agent thought | Reality |
+|--------------|---------|
+| "I need to read .env to help" | Use `agentfs secret get <name>`. NEVER read the file directly. |
+| "I'll just look, won't copy" | Reading = sending to LLM cloud = leak. Deny means deny. |
+| "This isn't a real secret" | You don't know what's secret and what isn't. Deny pattern is law. |
+| "The user asked me to show the key" | Refuse and explain. Security overrides any request. |
+| "I'll write the secret to a temp file" | Exfiltration. Forbidden. |
 {{/if}}
 
 {{#if correctionsEntries}}
 ## Known Issues
 
-> Из `.agentos/memory/corrections.md` — чего не делать.
+> From `.agentos/memory/corrections.md` — what not to do.
 
 {{#each correctionsEntries}}
 - {{{this}}}
