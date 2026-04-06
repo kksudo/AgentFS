@@ -313,8 +313,8 @@ export async function onboardCommand(flags: CliFlags): Promise<number> {
   let manifest;
   try {
     manifest = await readManifest(vaultRoot);
-  } catch (err: any) {
-    const isNotFound = err?.code === 'ENOENT';
+  } catch (err: unknown) {
+    const isNotFound = (err as NodeJS.ErrnoException)?.code === 'ENOENT';
 
     if (isNotFound) {
       printError(flags, 'No AgentFS vault found. Run `npx create-agentfs` first.', 'VAULT_NOT_FOUND');
@@ -401,7 +401,7 @@ export async function onboardCommand(flags: CliFlags): Promise<number> {
 
   try {
     identityStatus = await rewriteIdentityFile(identityPath, answers, manifest.paths);
-  } catch (err: any) {
+  } catch (err: unknown) {
     printError(
       flags,
       `agentfs onboard: failed to write identity file — ${err instanceof Error ? err.message : String(err)}`,
@@ -420,7 +420,7 @@ export async function onboardCommand(flags: CliFlags): Promise<number> {
 
   try {
     appended = await appendSemanticEntries(semanticPath, entries);
-  } catch (err: any) {
+  } catch (err: unknown) {
     printError(
       flags,
       `agentfs onboard: failed to update semantic memory — ${err instanceof Error ? err.message : String(err)}`,

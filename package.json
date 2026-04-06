@@ -1,6 +1,6 @@
 {
   "name": "create-agentfs",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Scaffold your Obsidian vault as a filesystem-based OS for AI agents",
   "type": "module",
   "main": "dist/cli.js",
@@ -16,7 +16,11 @@
     "test:watch": "NODE_OPTIONS='--experimental-vm-modules' jest --watch",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "preversion": "pnpm run lint && pnpm run build && pnpm test",
+    "version": "git add -A",
+    "postversion": "git push && git push --tags",
+    "release": "pnpm version patch && gh release create v$(node -p \"require('./package.json').version\") --generate-notes"
   },
   "keywords": [
     "agentfs",

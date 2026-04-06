@@ -25,11 +25,11 @@ export const openclawCompiler: AgentCompiler = {
     const outputs: CompileOutput[] = [];
 
     // Read security policy if it exists
-    let securityPolicy: any = null;
+    let securityPolicy: Record<string, unknown> | null = null;
     try {
       const policyPath = path.join(vaultRoot, '.agentos', 'security', 'policy.yaml');
       const policyContent = await fs.readFile(policyPath, 'utf-8');
-      securityPolicy = yaml.load(policyContent);
+      securityPolicy = yaml.load(policyContent) as Record<string, unknown>;
     } catch {
       // policy.yaml doesn't exist — skip security compilation
     }
