@@ -1,230 +1,151 @@
-# AgentFS: The OS for AI Agents in Your Vault
+# AgentFS
 
-**AgentFS is a CLI tool that turns your Obsidian vault into a standardized "Operating System" for AI agents.** It provides a single source of truth for your identity, memory, and security, allowing multiple AI agents (Claude, Cursor, OpenClaw) to work in perfect harmony in the same space.
+**One config. Every AI agent. Persistent memory.**
 
-## 🔴 The Problem: Agent Fragmentation
-Currently, every AI tool is a silo. 
-- **Claude Code** needs `CLAUDE.md`. 
-- **Cursor** needs `.cursor/rules/`. 
-- **OpenClaw** needs `.openclaw/`. 
+AgentFS turns your Obsidian vault into a unified operating system for AI agents. Define your identity, memory, and security rules once — compile to native formats for Claude Code, Cursor, OpenClaw, and others.
 
-When you use multiple agents, you have to maintain your rules, identity, and context in three different places. They don't share memory. They don't respect the same security rules. They are strangers in your vault every time you start a new session.
+[![npm version](https://img.shields.io/npm/v/create-agentfs.svg)](https://www.npmjs.com/package/create-agentfs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## 🟢 The Solution: A Unified Kernel
-AgentFS introduces a **Kernel Space** (`.agentos/`) to your vault. You define who you are and what you remember once, and AgentFS **compiles** that state into native configurations for every agent you use.
+---
 
-- **One Source of Truth**: Edit your identity in one place; update all agents with one command.
-- **Persistent Memory**: A standardized memory system (Tulving's taxonomy) that agents actually use and update.
-- **AppArmor-Style Security**: Real enforcement that prevents agents from reading your secrets or core system files.
-- **Linux-Style FHS**: A predictable directory structure that agents understand immediately.
+## The Problem
 
-```
-┌─────────────────────────────────────────────────┐
-│               USER SPACE (vault/)               │
-│   Human-readable folders, notes, content        │
-│   Obsidian sees and renders everything           │
-├─────────────────────────────────────────────────┤
-│          NATIVE RUNTIMES (per-agent)            │
-│   .claude/  .openclaw/  .cursor/  .obsidian/   │
-│   Native configs — each agent reads its own      │
-├─────────────────────────────────────────────────┤
-│         KERNEL SPACE (.agentos/)                │
-│   Source of truth → compiles to native formats   │
-│   manifest.yaml, init.d/, memory/, cron.d/      │
-└─────────────────────────────────────────────────┘
-```
+Every AI tool is a silo. Claude Code needs `CLAUDE.md`. Cursor needs `.cursor/rules/`. OpenClaw needs `.openclaw/`. You maintain the same rules, identity, and context in three different places. Agents don't share memory. They don't respect the same security policies. They start from zero every session.
 
-Five rules, stolen from Unix:
+## The Solution
 
-1. **Everything is a file.** Memory, tasks, skills, configs — markdown. The agent doesn't query a database. It reads files.
-2. **Do one thing well.** Each file is responsible for one thing. `stack.md` = stack. `brief.md` = vision. Don't mix.
-3. **Programs work together.** Frontmatter is the API contract between human, agent, and Obsidian. Wikilinks are pipes.
-4. **Text is the universal interface.** Markdown is human-readable, agent-parseable, Obsidian-renderable.
-5. **No captive UI.** The vault works without Obsidian, without any agent, without cloud. `cat` and `grep` are enough.
-
-## How It Works
-
-### Kernel Space: `.agentos/`
+AgentFS introduces a kernel (`.agentos/`) — a single source of truth for who you are, what you know, and what's off-limits. One command compiles it into native configs for every agent you use.
 
 ```
-.agentos/
-├── manifest.yaml              ← what is this vault (name, profile, paths, agents)
-├── init.d/                    ← boot sequence (agent-agnostic)
-│   ├── 00-identity.md         ← who am I, whose vault, roles
-│   ├── 10-memory.md           ← load memory (semantic on boot, rest lazy)
-│   ├── 20-today.md            ← load daily note + tasks
-│   └── 30-projects.md         ← load active projects
-├── compile.d/                 ← per-agent "drivers"
-│   ├── claude/                ← manifest → CLAUDE.md + .claude/settings.json
-│   ├── openclaw/              ← manifest → .openclaw/
-│   └── cursor/                ← manifest → .cursor/rules/
-├── security/                  ← AppArmor-style profiles + secrets vault
-│   ├── policy.yaml            ← Mandatory Access Control rules
-│   ├── modules/               ← domain-specific security (crypto, web, infra)
-│   └── secrets/               ← SOPS/age encrypted values (agent CANNOT read)
-├── cron.d/                    ← scheduled jobs
-│   ├── heartbeat.md           ← status updates
-│   ├── memory-consolidation.md ← end-of-session memory snapshot
-│   ├── distillation.md        ← deep cross-session pattern analysis (every 2 days)
-│   └── inbox-triage.md        ← classify new files
-├── memory/                    ← persistent agent state (Tulving's taxonomy)
-│   ├── semantic.md            ← facts, preferences (always loaded at boot)
-│   ├── episodic/              ← timestamped events (lazy-loaded by date)
-│   ├── procedural/            ← learned skills (lazy-loaded by name)
-│   └── corrections.md         ← past mistakes
-└── proc/                      ← runtime state (ephemeral, gitignored)
+.agentos/                        CLAUDE.md
+  manifest.yaml     agentfs      .claude/settings.json
+  init.d/          -------->     .cursor/rules/*.mdc
+  memory/           compile      .openclaw/
+  security/                      AGENT-MAP.md
 ```
 
-### Compile Pipeline
-
-Write once in `.agentos/`, compile to all native formats:
-
-```
-              .agentos/
-              manifest.yaml
-              init.d/ + memory/
-                    │
-              agentfs compile
-                    │
-         ┌──────────┼──────────┐
-         ▼          ▼          ▼
-    claude/     openclaw/    cursor/
-         │          │          │
-         ▼          ▼          ▼
-   CLAUDE.md    .openclaw/  .cursor/rules/
-   .claude/     AGENTS,     agentfs-
-   settings     SOUL...     global.mdc
-
-         + AGENT-MAP.md (vault router)
-```
+## Quick Start
 
 ```bash
-agentfs compile              # manifest → all native formats
-agentfs compile claude       # only Claude configs
-agentfs compile --dry-run    # preview changes
-agentfs import memory        # sync memory from native → canonical
+npx create-agentfs my-vault
+cd my-vault
+agentfs compile
 ```
 
-### Linux FHS Mapping
+That's it. Your vault now has a kernel, and every supported agent gets native configuration.
 
-Vault directories map to Linux filesystem hierarchy:
+For detailed setup with interactive onboarding, modules, and profiles — see the [Quick Start Guide](docs/quickstart.md).
 
-| Linux FHS | Vault Path | Purpose |
-|-----------|-----------|---------|
-| `/tmp` | `Inbox/` | Entry point for new notes |
-| `/var/log` | `Daily/` | Daily journals |
-| `/var/spool` | `Tasks/` | Task queues |
-| `/home` | `Projects/` | Active projects |
-| `/srv` | `Content/` | Content for publishing |
-| `/usr/share` | `Knowledge/` | Shared knowledge base |
-| `/etc` | `.agentos/` | System configuration |
-| `/var/lib` | `.agentos/memory/` | Persistent agent state |
-| `/etc/init.d` | `.agentos/init.d/` | Boot scripts |
-| `/etc/cron.d` | `.agentos/cron.d/` | Scheduled jobs |
-| `/proc` | `.agentos/proc/` | Runtime state (ephemeral) |
+## Two Ways to Use AgentFS
 
-### Memory System (Tulving's Taxonomy)
+### Persistent Agents (full power)
 
-Agent memory is split into three types based on cognitive science:
-
-**Semantic** (`semantic.md`) — context-free facts. Always loaded at boot. ~10x token savings vs loading everything.
-```
-PREF: no emoji in headings
-FACT: [active] primary stack is Kubernetes + ArgoCD
-PATTERN: [confidence:0.85] more productive in the morning
-AVOID: don't suggest LangChain
-```
-
-**Episodic** (`episodic/YYYY-MM-DD.md`) — timestamped events. Lazy-loaded when needed.
-
-**Procedural** (`procedural/{skill}.md`) — learned skills and workflows. Lazy-loaded by name.
-
-Confidence scoring with decay: new patterns start at 0.3, confirmed +0.2, denied -0.3, inactive 30 days -0.1. Below 0.1 = superseded. Facts use immutable append — never deleted, marked as `[superseded:{date}]`.
-
-### Security Model (5-Level Defense in Depth)
-
-```
-Level 5: ENCRYPTION AT REST    — SOPS/age for secrets, git-crypt for PII
-Level 4: SECRETS VAULT          — agent NEVER sees raw values, only references
-Level 3: APPARMOR PROFILES      — policy.yaml → .claude/settings.json deny rules
-Level 2: AGENT POLICY           — .agentignore + Security Policy in CLAUDE.md
-Level 1: GIT HYGIENE            — .gitignore for runtime state
-```
-
-`policy.yaml` defines what the agent can read, write, and execute. It compiles into real enforcement — Claude Code's `permissions.deny[]` actually blocks file access. For agents without enforcement (OpenClaw), it falls back to advisory text.
-
-Composable security modules: base policy + domain-specific extensions (crypto, web, infra, cloud, ci-cd).
-
-### Boot Sequence (SysVinit Runlevels)
-
-```
-Runlevel 0: HALT        — agent off
-Runlevel 1: IDENTITY    — load who I am, whose vault
-Runlevel 2: MEMORY      — load semantic memory (episodic + procedural lazy)
-Runlevel 3: CONTEXT     — load today's daily note + tasks
-Runlevel 4: PROJECTS    — load active projects
-Runlevel 5: FULL        — interactive mode (all systems go)
-Runlevel 6: SHUTDOWN    — memory consolidation, save state
-```
-
-Progressive disclosure: only semantic memory loaded at boot. Episodic and procedural memory loaded on demand. Reduces boot context by ~10x.
-
-## Three Profiles
-
-| Profile | For | Key Features |
-|---------|-----|-------------|
-| `personal` | Solo engineer, creator, builder | Career pipeline, content publishing, engineering knowledge base |
-| `company` | Team with shared knowledge | RBAC, team directories, ADR, postmortems, onboarding path |
-| `shared` | Multi-user collaborative | Per-user spaces, shared projects, user config files |
-
-## CLI
+Long-lived agents like Cowork, OpenClaw, or Cursor in background mode get the complete experience: memory accumulates between sessions, cron jobs consolidate knowledge, the agent "grows" over time.
 
 ```bash
-# Scaffold
-npx create-agentfs                    # interactive setup
+agentfs compile                   # compile kernel → native configs
+agentfs memory consolidate        # snapshot session memory
+agentfs sync                      # sync memory back to kernel
+```
+
+The agent reads `semantic.md` on boot, writes episodic memories, runs consolidation at session end. Full read-write cycle.
+
+### Session Agents (instant context)
+
+Short-lived sessions (Claude Code in terminal, one-off Cursor tasks) use AgentFS as a smart context loader. The agent starts knowing who you are, your stack, your preferences, your security rules — no warm-up questions.
+
+```bash
+npx create-agentfs my-project     # scaffold once
+agentfs compile                   # compile once
+# now every Claude Code session in this directory starts with full context
+```
+
+The agent consumes context but doesn't write back. That's fine — even read-only access to your identity and memory saves 2-3 rounds of "what framework do you use?" per session.
+
+## Give Your Agent the Prompt
+
+After running `agentfs compile`, paste this into your agent's first message (or add it to your workflow):
+
+```
+Read the file AGENT-MAP.md in the project root. It contains the vault structure,
+your identity, memory, security rules, and operating instructions. Follow them.
+
+If you see .agentos/memory/semantic.md — read it first. It contains facts and
+preferences that persist across sessions. If you learn something new about me
+or my project, append it to semantic.md in the correct format:
+
+FACT: [active] description
+PREF: [active] description
+
+Never modify files in .agentos/init.d/, .agentos/security/, or .agentos/cron.d/
+unless I explicitly ask you to "update the kernel".
+```
+
+For a comprehensive AI agent manual, see [docs/ai-manual.md](docs/ai-manual.md).
+
+## CLI Commands
+
+```bash
+# Scaffold & Setup
+agentfs init [dir]                # scaffold vault (same as npx create-agentfs)
+agentfs onboard                   # interactive interview → identity + memory
+agentfs migrate                   # migrate existing vault to AgentFS structure
 
 # Compile
-agentfs compile                       # all native formats
-agentfs compile claude --dry-run      # preview Claude changes
+agentfs compile [agent]           # compile kernel → native configs (all or specific agent)
+agentfs compile --dry-run         # preview changes without writing
 
 # Memory
-agentfs memory show                   # show semantic memory
-agentfs memory consolidate            # manual consolidation
+agentfs memory show               # display semantic memory
+agentfs memory add "fact"         # add a fact to long-term memory
+agentfs memory consolidate        # snapshot current session
 
-# Security
-agentfs security mode enforce         # enforce | complain | disabled
-agentfs security add crypto           # add domain-specific module
-agentfs security test                 # dry-run policy check
+# Security & Secrets
+agentfs security mode <mode>      # enforce | complain | disabled
+agentfs security add <module>     # add domain-specific security module
+agentfs secret set <key>          # manage SOPS/age encrypted secrets
 
 # Maintenance
-agentfs doctor                        # vault health check (+ agnix 385 rules)
-agentfs triage                        # classify Inbox/ files
-agentfs onboard                       # agent-led interview → identity + memory
-agentfs sync                          # bidirectional manifest ↔ compiled outputs
+agentfs doctor                    # vault health check
+agentfs triage                    # classify Inbox/ files
+agentfs sync                      # bidirectional memory sync
+agentfs cron run <job>            # manually trigger a cron job
 ```
 
-**Release v0.1.0** — Core architecture and all planned epics are fully implemented. 
+All commands support `--json`, `--config`, and `--output json` flags for non-interactive use by AI agents.
 
-### Core Documentation
-- 🚀 **[Quick Start Guide](docs/quickstart.md)** — Go here if you are a human.
-- 🤖 **[AI Agent Manual](docs/ai-manual.md)** — Tell your AI to read this file first. Yes, AgentFS is 100% **AI-Native** and provides an explicit instruction manual for the AI itself.
-- 🏛️ **[Architecture Document](docs/architecture.md)** — Full design document (v3, 17 sections).
-- 🔍 **[Competitive Research](docs/competitive-research.md)** — Analysis of 12 existing repos and what we took from them.
-- 🗺️ **[AGENT-MAP.md](AGENT-MAP.md)** — Vault router (generated).
+## Key Concepts
+
+**Kernel Space** (`.agentos/`) — single source of truth: manifest, identity, memory, security, cron jobs. Never edited by agents directly.
+
+**Compile Pipeline** — translates kernel into native formats: `CLAUDE.md` + `.claude/settings.json` for Claude, `.cursor/rules/agentfs-global.mdc` for Cursor, `.openclaw/` for OpenClaw.
+
+**Memory System** — based on Tulving's taxonomy: semantic (facts, always loaded), episodic (events, lazy), procedural (skills, lazy). Confidence scoring with decay.
+
+**Security** — AppArmor-style policies in `policy.yaml`. Compiles to real deny rules for Claude Code, advisory text for agents without enforcement.
+
+**Three Profiles** — `personal` (solo), `company` (team with RBAC), `shared` (multi-user collaborative).
+
+For the full architecture deep-dive, see [docs/architecture.md](docs/architecture.md).
+
+## Documentation
+
+| Document | For |
+|----------|-----|
+| [Quick Start Guide](docs/quickstart.md) | Humans — setup in 5 minutes |
+| [AI Agent Manual](docs/ai-manual.md) | AI agents — operating instructions |
+| [Architecture](docs/architecture.md) | Deep-dive into the full design |
+| [Internals](docs/internals.md) | Memory system, boot sequence, security model, FHS mapping |
+| [Contributing](CONTRIBUTING.md) | Adding compilers, security modules, commit conventions |
 
 ## Roadmap
 
-- Obsidian vault procedural skills (inbox-process, daily-review, content-pipeline)
-- `agentfs migrate` — automated vault migration with wikilink fix
 - Plugin system for community modules (`agentfs-module-{name}`)
 - Security module marketplace (`agentfs-security-{domain}`)
 - Multi-vault sync — transfer learned patterns between projects
-- Obsidian companion plugin (optional UI for `.agentos/proc/status.md`)
+- Obsidian companion plugin (optional UI for status)
 - Auto-compile triggers (file watcher, git hooks)
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on adding agent compilers and security modules.
 
 ## License
 

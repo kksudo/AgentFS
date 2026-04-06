@@ -45,7 +45,7 @@ import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
 import { parseCliFlags, resolveSetupAnswers } from './utils/cli-flags.js';
 
 /** CLI version — kept in sync with package.json by convention. */
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.4';
 
 /**
  * All subcommands recognised by the CLI.

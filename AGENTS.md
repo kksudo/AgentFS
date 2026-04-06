@@ -6,7 +6,7 @@ This file contains instructions for AI agents (Claude Code, Cursor, OpenClaw, et
 
 AgentFS is a CLI tool (`npx create-agentfs`) that scaffolds an Obsidian vault as a filesystem-based operating system for AI agents. The core concept: a `.agentos/` kernel space serves as single source of truth and compiles into native agent config formats.
 
-**Status:** v0.1.0 — All 13 epics implemented (Phases 1–11 complete). See `docs/architecture.md` for the full spec.
+**Status:** v0.1.4 — All 13 epics implemented (Phases 1–11 complete). See `docs/architecture.md` for the full spec.
 
 ## Repository Structure
 
@@ -18,14 +18,14 @@ AgentFS/
 ├── README.md                    ← Project overview and roadmap
 ├── CONTRIBUTING.md              ← Contribution guidelines
 ├── LICENSE                      ← MIT license
-├── package.json                 ← create-agentfs (Node.js 18+, ESM)
+├── package.json                 ← create-agentfs (Node.js >= 24.0.0, ESM)
 ├── tsconfig.json                ← TypeScript strict, ES2022, NodeNext
 ├── tsconfig.test.json           ← Extends tsconfig for Jest + ESM
 ├── jest.config.js               ← Jest with ts-jest ESM preset
 ├── eslint.config.js             ← ESLint flat config with @typescript-eslint
 ├── docs/
 │   ├── architecture.md          ← Full architecture spec (v3, 17 sections) — THE source of truth
-│   ├── competitive-research.md  ← Analysis of 12 existing repos
+│   ├── internals.md             ← Implementation reference (memory, boot, security, FHS)
 │   ├── quickstart.md            ← Human quick start guide
 │   └── ai-manual.md             ← AI agent manual for vault interaction
 ├── src/
@@ -79,7 +79,7 @@ Before making any changes, read `docs/architecture.md`. Key concepts:
 
 ### Code Style
 - Language: TypeScript (strict mode)
-- Runtime: Node.js 18+ (npx compatible, ESM)
+- Runtime: Node.js >= 24.0.0 (npx compatible, ESM)
 - Template engine: Handlebars (.hbs)
 - Config format: YAML (manifest, policy) + Markdown (init.d/, memory/)
 - Naming: kebab-case for files, camelCase for variables, PascalCase for classes
