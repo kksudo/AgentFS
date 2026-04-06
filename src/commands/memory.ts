@@ -12,7 +12,7 @@ import {
   writeProceduralEntry,
 } from '../memory/index.js';
 import { CliFlags, printError, printResult, resolveInput } from '../utils/cli-flags.js';
-import type { SemanticEntryType } from '../types/index.js';
+import type { SemanticEntryType, EntryStatus } from '../types/index.js';
 
 // ---------------------------------------------------------------------------
 // Show semantic memory
@@ -160,7 +160,7 @@ async function addMemory(flags: CliFlags): Promise<number> {
       type: type as SemanticEntryType,
       content: content as string,
       confidence: confidence as number | undefined,
-      status: (status as any) || 'active',
+      status: (status as EntryStatus) || 'active',
     });
     printResult(flags, `Added semantic entry: ${type}: ${content}`, { type, content });
     return 0;

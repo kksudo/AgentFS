@@ -187,8 +187,8 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
   let context;
   try {
     context = await buildCompileContext(vaultRoot, dryRun);
-  } catch (err: any) {
-    const isNotFound = err?.code === 'ENOENT';
+  } catch (err: unknown) {
+    const isNotFound = (err as NodeJS.ErrnoException)?.code === 'ENOENT';
 
     if (isNotFound) {
       printError(flags, 'No AgentFS vault found. Run `npx create-agentfs` first.', 'VAULT_NOT_FOUND');
