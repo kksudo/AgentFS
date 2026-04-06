@@ -77,6 +77,7 @@ or my project, append it to semantic.md in the correct format:
 
 FACT: [active] description
 PREF: [active] description
+AVOID: description of what NOT to do
 
 Never modify files in .agentos/init.d/, .agentos/security/, or .agentos/cron.d/
 unless I explicitly ask you to "update the kernel".

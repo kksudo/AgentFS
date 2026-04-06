@@ -83,11 +83,24 @@ Agent memory is split into three types based on cognitive science:
 Context-free facts. Always loaded at boot. ~10x token savings vs loading everything.
 
 ```
-PREF: no emoji in headings
 FACT: [active] primary stack is Kubernetes + ArgoCD
+FACT: [active] project uses React Native and Expo
+PREF: no emoji in headings
+PREF: always use TypeScript strict mode
 PATTERN: [confidence:0.85] more productive in the morning
 AVOID: don't suggest LangChain
+AVOID: never use lodash, prefer native methods
+AVOID: don't translate English technical terms to Russian
 ```
+
+Prefixes and when to use them:
+
+| Prefix | Purpose | Example |
+|--------|---------|---------|
+| `FACT` | Objective knowledge about stack, project, environment | `FACT: [active] deploy target is AWS EKS` |
+| `PREF` | Personal preferences for how agent should behave | `PREF: short commit messages, no emojis` |
+| `PATTERN` | Observed behavioral patterns (with confidence score) | `PATTERN: [confidence:0.7] prefers morning code reviews` |
+| `AVOID` | Things the agent must NOT do | `AVOID: never add dependencies without justification` |
 
 ### Episodic (`episodic/YYYY-MM-DD.md`)
 

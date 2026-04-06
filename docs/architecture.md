@@ -30,7 +30,7 @@
 | Директория | Владелец | Формат | Что хранит |
 |-----------|----------|--------|------------|
 | `.claude/` | Claude Code / Claudian | JSON + MD | settings, sessions, skills, commands |
-| `.omc/` | OMC / OpenClaw | JSON | project-memory, sessions, state |
+| `.openclaw/` | OpenClaw | JSON + MD | AGENTS, SOUL, TOOLS, sessions |
 | `.cursor/` | Cursor | JSON | settings, rules |
 | `.obsidian/` | Obsidian | JSON | plugins, themes, workspace |
 
