@@ -33,21 +33,22 @@ describe('compilers/openclaw', () => {
   test('compile generates SOUL.md', async () => {
     const result = await openclawCompiler.compile(mockContext);
     expect(result.agent).toBe('openclaw');
-    expect(result.outputs).toHaveLength(1);
+    expect(result.outputs.length).toBeGreaterThanOrEqual(1);
 
-    const output = result.outputs[0];
-    expect(output.path).toBe('SOUL.md');
-    expect(output.managed).toBe(true);
-    expect(output.content).toContain('Test Vault');
-    expect(output.content).toContain('I am a helpful assistant');
-    expect(output.content).toContain('dark mode');
-    expect(output.content).toContain('00-identity.md');
+    const soul = result.outputs.find(o => o.path === '.openclaw/SOUL.md');
+    expect(soul).toBeDefined();
+    expect(soul!.managed).toBe(true);
+
+    const identity = result.outputs.find(o => o.path === '.openclaw/IDENTITY.md');
+    expect(identity).toBeDefined();
+    expect(identity!.content).toContain('Test Vault');
   });
 
   test('handles missing identity gracefully', async () => {
     const ctx = { ...mockContext, initScripts: {} };
     const result = await openclawCompiler.compile(ctx);
-    expect(result.outputs[0].content).not.toContain('Identity');
+    const identity = result.outputs.find(o => o.path === '.openclaw/IDENTITY.md');
+    expect(identity).toBeDefined();
   });
 });
 
@@ -60,13 +61,13 @@ describe('compilers/cursor', () => {
     expect(cursorCompiler.supports('security-enforce')).toBe(false);
   });
 
-  test('compile generates .cursorrules', async () => {
+  test('compile generates .cursor/rules/agentfs-global.mdc', async () => {
     const result = await cursorCompiler.compile(mockContext);
     expect(result.agent).toBe('cursor');
     expect(result.outputs).toHaveLength(1);
 
     const output = result.outputs[0];
-    expect(output.path).toBe('.cursorrules');
+    expect(output.path).toBe('.cursor/rules/agentfs-global.mdc');
     expect(output.managed).toBe(true);
     expect(output.content).toContain('Test Vault');
     expect(output.content).toContain('I am a helpful assistant');

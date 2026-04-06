@@ -64,7 +64,7 @@ export async function runCronJob(
 
   // 1. Check for existing lock
   try {
-    const stat = await fs.stat(lockPath);
+    await fs.stat(lockPath);
     // If we're here, the file exists. Check if it's stale (optional, but for now just fail)
     return {
       success: false,

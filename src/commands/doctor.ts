@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { scanForInjections, readSecurityPolicy } from '../security/parser.js';
-import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
+import { CliFlags, printResult } from '../utils/cli-flags.js';
 
 // ---------------------------------------------------------------------------
 // Doctor command — Story 12.1

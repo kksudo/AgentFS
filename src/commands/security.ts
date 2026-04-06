@@ -119,7 +119,7 @@ export async function securityCommand(flags: CliFlags): Promise<number> {
     let content: string;
     try {
       content = await fs.readFile(path.resolve(filePath), 'utf8');
-    } catch (err: any) {
+    } catch {
       printError(flags, `Cannot read file: ${filePath}`, 'FILE_READ_FAILED');
       return 1;
     }

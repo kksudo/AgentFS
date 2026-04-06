@@ -9,10 +9,8 @@
  */
 
 import fs from 'node:fs/promises';
-import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import yaml from 'js-yaml';
-import type { AgentCompiler, CompileContext, CompileResult, SecurityPolicy } from '../types/index.js';
+import type { AgentCompiler, CompileContext, CompileResult } from '../types/index.js';
 import { compileTemplate } from './base.js';
 import { readSecurityPolicy } from '../security/parser.js';
 import { parseSemanticMemory } from '../memory/parser.js';
@@ -87,7 +85,7 @@ export const claudeCompiler: AgentCompiler = {
    * @returns CompileResult with one managed output: `CLAUDE.md`
    */
   async compile(context: CompileContext): Promise<CompileResult> {
-    const { manifest, initScripts, corrections } = context;
+    const { manifest, initScripts } = context;
 
     // Read template from the filesystem (async, so hot-reload works in dev)
     const templateSource = await fs.readFile(fileURLToPath(TEMPLATE_URL), 'utf-8');
