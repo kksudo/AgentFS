@@ -43,14 +43,30 @@ const ENTRY_RE =
 // ---------------------------------------------------------------------------
 
 /**
+ * Result of parsing semantic memory with optional warning collection.
+ */
+export interface ParseSemanticMemoryResult {
+  entries: SemanticEntry[];
+  warnings: string[];
+}
+
+/**
  * Parses a `semantic.md` file content string into structured `SemanticEntry`
  * objects.
  *
  * Only lines that match the canonical format are returned; markdown headings,
  * comments, blank lines, and unrecognised lines are discarded.
  *
+ * When `strict` is true, lines that look like they could be entries (contain
+ * a colon) but don't match the canonical format are collected as warnings
+ * instead of being silently skipped.
+ *
  * @param content - Raw text content of the file.
- * @returns Array of parsed entries in document order.
+ * @param strict  - When true, returns `{ entries, warnings }` with malformed
+ *                  lines reported. When false (default), returns entries only
+ *                  for backward compatibility.
+ * @returns Array of parsed entries in document order (when strict=false),
+ *          or `{ entries, warnings }` object (when strict=true).
  *
  * @example
  * ```ts
@@ -59,15 +75,34 @@ const ENTRY_RE =
  * );
  * // entries[0] → { type: 'FACT', content: 'primary stack is Kubernetes', status: 'active' }
  * // entries[1] → { type: 'AVOID', content: "don't use LangChain", status: 'active' }
+ *
+ * const result = parseSemanticMemory('FACT: [active] valid\nBADLINE: oops', true);
+ * // result.entries → [{ type: 'FACT', ... }]
+ * // result.warnings → ['Line 2: unrecognised entry format: "BADLINE: oops"']
  * ```
  */
-export function parseSemanticMemory(content: string): SemanticEntry[] {
+export function parseSemanticMemory(content: string): SemanticEntry[];
+export function parseSemanticMemory(content: string, strict: true): ParseSemanticMemoryResult;
+export function parseSemanticMemory(
+  content: string,
+  strict?: boolean,
+): SemanticEntry[] | ParseSemanticMemoryResult {
   const entries: SemanticEntry[] = [];
+  const warnings: string[] = [];
 
-  for (const rawLine of content.split('\n')) {
+  const lines = content.split('\n');
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const rawLine = lines[lineIdx];
     const line = rawLine.trim();
     const match = ENTRY_RE.exec(line);
-    if (match === null) continue;
+    if (match === null) {
+      // In strict mode, flag lines that look like malformed entries (have a colon
+      // but don't match the canonical format, and are not blank/headings/comments).
+      if (strict && line.length > 0 && !line.startsWith('#') && !line.startsWith('<!--') && line.includes(':')) {
+        warnings.push(`Line ${lineIdx + 1}: unrecognised entry format: "${line}"`);
+      }
+      continue;
+    }
 
     const [, rawType, modifier, entryContent] = match as unknown as [
       string,
@@ -107,6 +142,9 @@ export function parseSemanticMemory(content: string): SemanticEntry[] {
     entries.push(entry);
   }
 
+  if (strict) {
+    return { entries, warnings };
+  }
   return entries;
 }
 

@@ -36,3 +36,7 @@ export {
   listProceduralSkills,
   slugify,
 } from './procedural.js';
+
+export { generateMemoryIndex } from './memory-index.js';
+
+export type { ParseSemanticMemoryResult } from './parser.js';
