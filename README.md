@@ -150,11 +150,29 @@ For the full architecture deep-dive, see [docs/architecture.md](docs/architectur
 
 ## Roadmap
 
-- Plugin system for community modules (`agentfs-module-{name}`)
-- Security module marketplace (`agentfs-security-{domain}`)
-- Multi-vault sync — transfer learned patterns between projects
-- Obsidian companion plugin (optional UI for status)
-- Auto-compile triggers (file watcher, git hooks)
+| Quarter | Milestone |
+|---------|-----------|
+| Q2 2026 | Stable core (v0.2), 3+ example vaults, auto-compile (file watcher + git hooks), first community module |
+| Q3 2026 | AgentFS Cloud MVP (hosted vault, sync, team profiles), MemPalace integration |
+| Q4 2026 | Module Marketplace beta, Security Marketplace (`agentfs-security-{domain}`), Obsidian companion plugin |
+| Q1 2027 | Multi-vault sync, Product Hunt launch |
+
+## Strategic Integrations
+
+AgentFS is an infrastructure layer — its value grows with every integration.
+
+### MemPalace — Long-term Agent Memory
+[github.com/milla-jovovich/mempalace](https://github.com/milla-jovovich/mempalace)
+
+The highest-scoring open source memory system for AI: 96.6% on LongMemEval with zero cloud calls. AgentFS defines *where* and *when* to store memory (`.agentos/memory/`), MemPalace solves *how* to search and compress it. AAAK encoding provides 30x context compression — agents get the same knowledge at ~170 tokens instead of 650K. Direct API cost savings for users.
+
+### Cognithor — Local-first AI OS
+
+Cognithor builds a local operating system for AI agents (executor layer). AgentFS occupies the kernel layer: manifest, security policy, and memory standards. The "Kernel (AgentFS) + Executor (Cognithor)" stack delivers fully autonomous agents with zero cloud dependency.
+
+### Plugin System — Community-driven Extensibility
+
+The `agentfs-module-{name}` architecture enables community-built modules for specific domains: `agentfs-module-github`, `agentfs-module-slack`, `agentfs-security-hipaa`, `agentfs-security-fintech`. Each module is a reusable package of rules, integrations, and security policies — creating network effects as the ecosystem grows.
 
 ## License
 
