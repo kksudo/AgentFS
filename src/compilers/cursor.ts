@@ -13,7 +13,7 @@ export const cursorCompiler: AgentCompiler = {
   name: 'cursor',
 
   async compile(context: CompileContext): Promise<CompileResult> {
-    const { manifest, initScripts } = context;
+    const { manifest, initScripts, corrections } = context;
 
     const lines: string[] = [];
     lines.push('---');
@@ -47,6 +47,12 @@ export const cursorCompiler: AgentCompiler = {
       for (const script of manifest.boot.sequence) {
         lines.push(`- ${script}`);
       }
+      lines.push('');
+    }
+
+    if (corrections) {
+      lines.push('### Avoid These Mistakes');
+      lines.push(corrections);
       lines.push('');
     }
 
