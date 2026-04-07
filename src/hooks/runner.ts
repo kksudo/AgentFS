@@ -8,18 +8,14 @@
  */
 
 import { exec } from 'node:child_process';
-import fs from 'node:fs/promises';
 import { promisify } from 'node:util';
 import path from 'node:path';
-import yaml from 'js-yaml';
-import type { Manifest } from '../types/index.js';
+import { readManifest } from '../compilers/base.js';
 
 const execAsync = promisify(exec);
 
-async function loadManifest(vaultRoot: string): Promise<Manifest> {
-  const content = await fs.readFile(path.join(vaultRoot, '.agentos', 'manifest.yaml'), 'utf-8');
-  return yaml.load(content) as Manifest;
-}
+/** Default timeout for hook scripts (10 seconds). */
+const HOOK_TIMEOUT_MS = 10_000;
 
 export interface HookEvent {
   name: string; // 'pre-compile' | 'post-compile' | 'on-boot' | etc.
@@ -45,10 +41,10 @@ export interface HookResult {
 export async function runHooks(vaultRoot: string, event: HookEvent): Promise<HookResult> {
   const emptyResult: HookResult = { event: event.name, scripts: [], results: [] };
 
-  // Read manifest — if it fails (vault not initialised), silently return empty
+  // Read manifest — if it fails (vault not initialised), silently return empty.
   let manifest;
   try {
-    manifest = await loadManifest(vaultRoot);
+    manifest = await readManifest(vaultRoot);
   } catch {
     return emptyResult;
   }
@@ -59,17 +55,22 @@ export async function runHooks(vaultRoot: string, event: HookEvent): Promise<Hoo
   const scripts = hooks[event.name];
   if (!scripts || scripts.length === 0) return emptyResult;
 
-  // Hooks directory relative to .agentos/hooks/
   const hooksDir = path.join(vaultRoot, '.agentos', 'hooks');
-
   const scriptResults: HookResult['results'] = [];
 
   for (const script of scripts) {
-    // Scripts are relative to .agentos/hooks/
-    const scriptPath = path.join(hooksDir, script);
+    const scriptPath = path.resolve(hooksDir, script);
+
+    // Guard against path traversal — script must stay inside .agentos/hooks/.
+    if (!scriptPath.startsWith(hooksDir + path.sep) && scriptPath !== hooksDir) {
+      scriptResults.push({ script, success: false, output: 'Rejected: path traversal outside .agentos/hooks/' });
+      continue;
+    }
+
     try {
       const { stdout, stderr } = await execAsync(scriptPath, {
         cwd: vaultRoot,
+        timeout: HOOK_TIMEOUT_MS,
         env: {
           ...process.env,
           AGENTFS_VAULT_ROOT: vaultRoot,

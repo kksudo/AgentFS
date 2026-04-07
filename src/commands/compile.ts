@@ -223,6 +223,16 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
   }
 
   // -------------------------------------------------------------------------
+  // Surface init.d validation warnings.
+  // -------------------------------------------------------------------------
+
+  if (flags.outputFormat === 'human' && context.initScriptWarnings) {
+    for (const warning of context.initScriptWarnings) {
+      process.stderr.write(`${warning}\n`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Validate context — print warnings to stderr, never block compilation.
   // -------------------------------------------------------------------------
 

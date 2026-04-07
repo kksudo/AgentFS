@@ -193,7 +193,7 @@ export async function buildCompileContext(
     readCorrections(vaultRoot),
   ]);
 
-  const bootSequence = (manifest as { boot?: { sequence?: string[] } }).boot?.sequence ?? [];
+  const bootSequence = manifest.boot?.sequence ?? [];
   const { warnings: initScriptWarnings } = validateInitScripts(initScripts, bootSequence);
 
   return { manifest, initScripts, semanticMemory, corrections, vaultRoot, dryRun, initScriptWarnings };
