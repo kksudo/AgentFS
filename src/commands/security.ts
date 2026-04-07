@@ -54,7 +54,10 @@ export async function securityCommand(flags: CliFlags): Promise<number> {
   }
 
   if (action === 'show') {
-    const policy = await readSecurityPolicy(vaultRoot);
+    const { policy, warnings } = await readSecurityPolicy(vaultRoot);
+    if (warnings.length > 0) {
+      for (const w of warnings) process.stderr.write(`[security] warning: ${w}\n`);
+    }
     let human = '\nSecurity Policy\n' + '═'.repeat(50) + '\n';
     human += `  Mode: ${policy.default_mode}\n`;
     human += `  Version: ${policy.version}\n\n`;
@@ -82,7 +85,7 @@ export async function securityCommand(flags: CliFlags): Promise<number> {
       return 1;
     }
 
-    const policy = await readSecurityPolicy(vaultRoot);
+    const { policy } = await readSecurityPolicy(vaultRoot);
     policy.default_mode = mode;
     await writeSecurityPolicy(vaultRoot, policy);
 
@@ -94,7 +97,7 @@ export async function securityCommand(flags: CliFlags): Promise<number> {
   }
 
   if (action === 'compile') {
-    const policy = await readSecurityPolicy(vaultRoot);
+    const { policy } = await readSecurityPolicy(vaultRoot);
     const dryRun = flags.args.includes('--dry-run');
     const settings = await compileClaudeSecurity(vaultRoot, policy, dryRun);
 
@@ -114,7 +117,7 @@ export async function securityCommand(flags: CliFlags): Promise<number> {
       return 1;
     }
 
-    const policy = await readSecurityPolicy(vaultRoot);
+    const { policy } = await readSecurityPolicy(vaultRoot);
 
     let content: string;
     try {

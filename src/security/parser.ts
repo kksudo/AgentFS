@@ -51,22 +51,37 @@ export const DEFAULT_POLICY: SecurityPolicy = {
 };
 
 /**
+ * Result of reading a security policy, including any advisory warnings.
+ */
+export interface SecurityPolicyResult {
+  policy: SecurityPolicy;
+  warnings: string[];
+}
+
+/**
  * Read and parse the security policy from a vault.
  *
  * @param vaultRoot - Absolute path to vault root
- * @returns Parsed SecurityPolicy, or default if file doesn't exist
+ * @returns Parsed SecurityPolicy plus any advisory warnings
  */
 export async function readSecurityPolicy(
   vaultRoot: string,
-): Promise<SecurityPolicy> {
+): Promise<SecurityPolicyResult> {
   const policyPath = path.join(vaultRoot, POLICY_PATH);
 
   try {
     const content = await fs.readFile(policyPath, 'utf8');
     const parsed = yaml.load(content) as Partial<SecurityPolicy>;
-    return mergeWithDefaults(parsed);
+    const policy = mergeWithDefaults(parsed);
+    const warnings = validateSecurityPolicy(policy);
+    return { policy, warnings };
   } catch {
-    return DEFAULT_POLICY;
+    return {
+      policy: DEFAULT_POLICY,
+      warnings: [
+        'policy.yaml not found — using defaults, security is advisory only',
+      ],
+    };
   }
 }
 
@@ -110,6 +125,40 @@ function mergeWithDefaults(partial: Partial<SecurityPolicy>): SecurityPolicy {
       ...partial.commands,
     },
   };
+}
+
+/**
+ * Validate a security policy and return advisory warnings for any issues found.
+ *
+ * @param policy - SecurityPolicy to validate
+ * @returns Array of warning strings (empty means policy is valid)
+ */
+export function validateSecurityPolicy(policy: SecurityPolicy): string[] {
+  const warnings: string[] = [];
+
+  // Check deny_read has at least secrets patterns
+  const hasSecretsPattern = policy.file_access.deny_read.some(
+    (p) => p.includes('secret') || p.includes('.env') || p.includes('.pem') || p.includes('.key'),
+  );
+  if (!hasSecretsPattern) {
+    warnings.push('deny_read does not include secrets patterns — sensitive files may be readable');
+  }
+
+  // Check deny_write has at least manifest/policy patterns
+  const hasManifestOrPolicyPattern = policy.file_access.deny_write.some(
+    (p) => p.includes('.git') || p.includes('manifest') || p.includes('policy'),
+  );
+  if (!hasManifestOrPolicyPattern) {
+    warnings.push('deny_write does not include manifest/policy patterns — kernel files may be writable');
+  }
+
+  // Check default_mode is a valid SecurityMode
+  const validModes = ['enforce', 'complain', 'disabled'] as const;
+  if (!validModes.includes(policy.default_mode as (typeof validModes)[number])) {
+    warnings.push(`default_mode "${policy.default_mode}" is not valid — must be one of: ${validModes.join(', ')}`);
+  }
+
+  return warnings;
 }
 
 /**

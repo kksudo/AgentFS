@@ -24,6 +24,9 @@ import { cursorCompiler } from '../compilers/cursor.js';
 import { generateAgentsFile } from '../compilers/agent-map.js';
 import type { AgentCompiler } from '../types/index.js';
 import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
+import { runHooks } from '../hooks/index.js';
+import { validateManifest } from '../utils/validate-manifest.js';
+import { generateMemoryIndex } from '../memory/memory-index.js';
 
 // ---------------------------------------------------------------------------
 // Registry of all known compilers.
@@ -203,6 +206,33 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
   }
 
   // -------------------------------------------------------------------------
+  // Validate manifest — errors block compilation, warnings are advisory.
+  // -------------------------------------------------------------------------
+
+  const manifestValidation = validateManifest(context.manifest);
+  if (!manifestValidation.valid) {
+    for (const error of manifestValidation.errors) {
+      printError(flags, `agentfs compile: ${error}`, 'MANIFEST_INVALID');
+    }
+    return 1;
+  }
+  if (flags.outputFormat === 'human') {
+    for (const warning of manifestValidation.warnings) {
+      process.stderr.write(`Warning: ${warning}\n`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Surface init.d validation warnings.
+  // -------------------------------------------------------------------------
+
+  if (flags.outputFormat === 'human' && context.initScriptWarnings) {
+    for (const warning of context.initScriptWarnings) {
+      process.stderr.write(`${warning}\n`);
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Validate context — print warnings to stderr, never block compilation.
   // -------------------------------------------------------------------------
 
@@ -251,6 +281,9 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
   const results: CompileResult[] = [];
 
   try {
+    // Run pre-compile hooks before any compilation.
+    await runHooks(vaultRoot, { name: 'pre-compile', context: { agent: targetAgent ?? 'all', dryRun } });
+
     for (const compiler of compilersToRun) {
       const result = await compiler.compile(context);
       results.push(result);
@@ -270,6 +303,16 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
     if (agentMapOutput.managed) {
       await writeOutputs([agentMapOutput], vaultRoot, dryRun);
     }
+
+    // -----------------------------------------------------------------------
+    // Always regenerate .agentos/memory/INDEX.md to enforce lazy-load policy.
+    // -----------------------------------------------------------------------
+
+    const memoryIndexOutput = await generateMemoryIndex(vaultRoot);
+    await writeOutputs([memoryIndexOutput], vaultRoot, dryRun);
+
+    // Run post-compile hooks after all outputs have been written.
+    await runHooks(vaultRoot, { name: 'post-compile', context: { agent: targetAgent ?? 'all', dryRun } });
 
     printResult(flags, formatSummary(results, agentMapOutput, dryRun), {
       agent: targetAgent || 'all',

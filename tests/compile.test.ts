@@ -4,10 +4,18 @@ const mockBuildCompileContext = jest.fn<any>();
 const mockWriteOutputs = jest.fn<any>();
 const mockClaudeCompile = jest.fn<any>();
 const mockGenerateAgentsFile = jest.fn<any>();
+const mockRunHooks = jest.fn<any>().mockResolvedValue(undefined);
+const mockValidateManifest = jest.fn<any>().mockReturnValue({ valid: true, errors: [], warnings: [] });
+const mockGenerateMemoryIndex = jest.fn<any>().mockResolvedValue({
+  path: '.agentos/memory/INDEX.md',
+  content: '# Memory Index\n',
+  managed: true,
+});
 
 jest.unstable_mockModule('../src/compilers/base.js', () => ({
   buildCompileContext: mockBuildCompileContext,
-  writeOutputs: mockWriteOutputs
+  writeOutputs: mockWriteOutputs,
+  readManifest: jest.fn<any>(),
 }));
 
 jest.unstable_mockModule('../src/compilers/claude.js', () => ({
@@ -20,6 +28,18 @@ jest.unstable_mockModule('../src/compilers/claude.js', () => ({
 
 jest.unstable_mockModule('../src/compilers/agent-map.js', () => ({
   generateAgentsFile: mockGenerateAgentsFile
+}));
+
+jest.unstable_mockModule('../src/hooks/index.js', () => ({
+  runHooks: mockRunHooks,
+}));
+
+jest.unstable_mockModule('../src/utils/validate-manifest.js', () => ({
+  validateManifest: mockValidateManifest,
+}));
+
+jest.unstable_mockModule('../src/memory/memory-index.js', () => ({
+  generateMemoryIndex: mockGenerateMemoryIndex,
 }));
 
 const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation((() => true) as any);
@@ -102,7 +122,7 @@ describe('commands/compile', () => {
     expect(code).toBe(0);
     expect(mockClaudeCompile).toHaveBeenCalled();
     expect(mockGenerateAgentsFile).toHaveBeenCalled();
-    expect(mockWriteOutputs).toHaveBeenCalledTimes(2); // once for claude, once for AGENT-MAP.md
+    expect(mockWriteOutputs).toHaveBeenCalledTimes(3); // once for claude, once for AGENT-MAP.md, once for INDEX.md
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('AgentFS compile complete'));
   });
 

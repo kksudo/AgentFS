@@ -26,6 +26,8 @@ export interface CompileContext {
   vaultRoot: string;
   /** Whether this is a dry-run (preview only, don't write) */
   dryRun: boolean;
+  /** Advisory warnings from init.d validation (never blocks compilation) */
+  initScriptWarnings?: string[];
 }
 
 /** A single file that a compiler wants to write. */
