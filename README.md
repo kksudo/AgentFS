@@ -9,13 +9,21 @@ AgentFS turns your Obsidian vault into a unified operating system for AI agents.
 
 ---
 
-## The Problem
+## The Problem: Context Fragmentation
 
-Every AI tool is a silo. Claude Code needs `CLAUDE.md`. Cursor needs `.cursor/rules/`. OpenClaw needs `.openclaw/`. You maintain the same rules, identity, and context in three different places. Agents don't share memory. They don't respect the same security policies. They start from zero every session.
+AI agents today are silos. Claude Code needs `CLAUDE.md`, Cursor needs `.cursor/rules/`, and OpenClaw needs `.openclaw/`. You maintain the same rules, identity, and context in three different places. Agents don't share memory. They don't respect the same security policies. They start from zero every session. 
 
-## The Solution
+**Most importantly: Agents lack a "Persistent State."** They can't "pause" and "resume" tasks across sessions or hand off context to other agents without major manual intervention.
 
-AgentFS introduces a kernel (`.agentos/`) — a single source of truth for who you are, what you know, and what's off-limits. One command compiles it into native configs for every agent you use.
+## The Solution: AgentFS (The Agent OS Infrastructure)
+
+AgentFS introduces a **Kernel Space** (`.agentos/`) — a single source of truth for who you are, what you know, and what's off-limits. One command compiles it into native configs for every agent you use.
+
+- **Persistent State:** Agents can maintain state across toolchains and sessions.
+- **Inter-Agent Sync:** A shared filesystem where different agents exchange context without API overhead.
+- **Secure Context Isolation:** Deterministic security rules that agents *actually* respect across environments.
+
+AgentFS isn't just a config generator; it's the **missing infrastructure layer** for autonomous AI agents. While others build the *agents*, AgentFS builds the *environment* they live in.
 
 ```
 .agentos/                        CLAUDE.md
