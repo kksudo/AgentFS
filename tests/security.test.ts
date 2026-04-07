@@ -30,9 +30,10 @@ describe('security system', () => {
 
   describe('parser', () => {
     test('returns default policy if no file exists', async () => {
-      const policy = await readSecurityPolicy(tmpVault);
+      const { policy, warnings } = await readSecurityPolicy(tmpVault);
       expect(policy.default_mode).toBe('complain');
       expect(policy.version).toBe('1.0');
+      expect(warnings).toContain('policy.yaml not found — using defaults, security is advisory only');
     });
 
     test('reads and merges custom policy from file', async () => {
@@ -42,7 +43,7 @@ describe('security system', () => {
         'version: "2.0"\ndefault_mode: enforce\n'
       );
 
-      const policy = await readSecurityPolicy(tmpVault);
+      const { policy } = await readSecurityPolicy(tmpVault);
       expect(policy.version).toBe('2.0');
       expect(policy.default_mode).toBe('enforce');
       // Should still have defaults for missing sections

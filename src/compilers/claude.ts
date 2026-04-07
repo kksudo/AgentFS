@@ -114,7 +114,7 @@ export const claudeCompiler: AgentCompiler = {
           .filter((line) => line.length > 0)
       : null;
     // Read security policy (uses defaults if file missing)
-    const securityPolicy = await readSecurityPolicy(context.vaultRoot);
+    const { policy: securityPolicy } = await readSecurityPolicy(context.vaultRoot);
 
     const hasSecurityRules = true; // Always include security section for Claude
     const denyRead = securityPolicy.file_access.deny_read;

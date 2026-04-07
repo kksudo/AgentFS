@@ -2,6 +2,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { scanForInjections, readSecurityPolicy } from '../security/parser.js';
 import { CliFlags, printResult } from '../utils/cli-flags.js';
+import { validateFrontmatter } from '../utils/validate-frontmatter.js';
+import { readManifest } from '../compilers/base.js';
 
 // ---------------------------------------------------------------------------
 // Doctor command — Story 12.1
@@ -55,13 +57,12 @@ export async function doctorCommand(flags: CliFlags): Promise<number> {
     checks.push({ name: 'Memory system', passed: false, message: 'memory/ not found' });
   }
 
-  // Check 5: Security policy
-  const policy = await readSecurityPolicy(vaultRoot);
-  checks.push({
-    name: 'Security policy',
-    passed: true,
-    message: `Mode: ${policy.default_mode}, ${policy.input_validation.scan_on_read.length} injection patterns`,
-  });
+  // Check 5: Security policy (warnings are advisory, not failures)
+  const { policy, warnings: policyWarnings } = await readSecurityPolicy(vaultRoot);
+  const policyMessage = policyWarnings.length > 0
+    ? `Mode: ${policy.default_mode} (advisory: ${policyWarnings[0]})`
+    : `Mode: ${policy.default_mode}, ${policy.input_validation.scan_on_read.length} injection patterns`;
+  checks.push({ name: 'Security policy', passed: true, message: policyMessage });
 
   // Check 6: Scan compiled outputs for injection
   try {
@@ -74,6 +75,34 @@ export async function doctorCommand(flags: CliFlags): Promise<number> {
     });
   } catch {
     checks.push({ name: 'CLAUDE.md injection scan', passed: true, message: 'Not compiled yet (skipped)' });
+  }
+
+  // Check 7: Frontmatter validation on init.d/ files
+  try {
+    const manifest = await readManifest(vaultRoot);
+    const requiredFields = manifest.frontmatter?.required ?? [];
+    const initDir = path.join(vaultRoot, '.agentos', 'init.d');
+    const entries = await fs.readdir(initDir);
+    const mdFiles = entries.filter((f) => f.endsWith('.md'));
+
+    let fmErrors = 0;
+    let fmWarnings = 0;
+    for (const file of mdFiles) {
+      const content = await fs.readFile(path.join(initDir, file), 'utf8');
+      const result = validateFrontmatter(content, requiredFields);
+      fmErrors += result.errors.length;
+      fmWarnings += result.warnings.length;
+    }
+
+    checks.push({
+      name: 'Frontmatter validation',
+      passed: fmErrors === 0,
+      message: fmErrors === 0
+        ? `${mdFiles.length} file(s) checked, ${fmWarnings} warning(s)`
+        : `${fmErrors} error(s), ${fmWarnings} warning(s) across ${mdFiles.length} file(s)`,
+    });
+  } catch {
+    checks.push({ name: 'Frontmatter validation', passed: true, message: 'Skipped (init.d/ not found or manifest unreadable)' });
   }
 
   // Print results
