@@ -19,6 +19,7 @@ import { generateManifest } from './manifest.js';
 import { generateInitScripts } from './init.js';
 import { generateIgnoreFiles } from './ignore.js';
 import { generateMemoryFiles } from './memory.js';
+import { generateOsRelease } from './os-release.js';
 
 /**
  * Run the full scaffold pipeline.
@@ -61,6 +62,12 @@ export async function scaffold(answers: SetupAnswers): Promise<ScaffoldResult> {
   details['memory'] = memoryResult;
   filesCreated += memoryResult.created.length;
   itemsSkipped += memoryResult.skipped.length;
+
+  // 6. OS-release versioning file
+  const osReleaseResult = await generateOsRelease(answers.targetDir);
+  details['os-release'] = osReleaseResult;
+  filesCreated += osReleaseResult.created.length;
+  itemsSkipped += osReleaseResult.skipped.length;
 
   return { dirsCreated, filesCreated, itemsSkipped, details };
 }
