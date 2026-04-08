@@ -27,8 +27,9 @@ import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 import { runHooks } from '../hooks/index.js';
 import { validateManifest } from '../utils/validate-manifest.js';
 import { generateMemoryIndex } from '../memory/memory-index.js';
-import { updateOsRelease } from '../generators/os-release.js';
+import { updateOsRelease, readOsRelease } from '../generators/os-release.js';
 import { CLI_VERSION } from '../utils/version.js';
+import { CURRENT_SCHEMA_VERSION } from '../migrations/index.js';
 
 const COMPILE_VERSION = CLI_VERSION;
 
@@ -244,6 +245,19 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
   if (flags.outputFormat === 'human') {
     for (const warning of warnings) {
       process.stderr.write(warning + '\n');
+    }
+  }
+
+  // -------------------------------------------------------------------------
+  // Check vault schema version — warn if outdated, block if newer.
+  // -------------------------------------------------------------------------
+
+  const osRelease = await readOsRelease(vaultRoot);
+  if (osRelease && osRelease.SCHEMA_VERSION < CURRENT_SCHEMA_VERSION) {
+    if (flags.outputFormat === 'human') {
+      process.stderr.write(
+        `Warning: Vault schema v${osRelease.SCHEMA_VERSION} is outdated (CLI expects v${CURRENT_SCHEMA_VERSION}). Run \`agentfs upgrade\` first.\n`,
+      );
     }
   }
 

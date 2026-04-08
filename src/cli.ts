@@ -33,6 +33,7 @@ void (0 as unknown as AgentCompiler);
 void (0 as unknown as SecurityPolicy);
 
 import { compileCommand } from './commands/compile.js';
+import { upgradeCommand } from './commands/upgrade.js';
 import { onboardCommand } from './commands/onboard.js';
 import { memoryCommand } from './commands/memory.js';
 import { cronCommand } from './commands/cron.js';
@@ -82,6 +83,7 @@ export type Subcommand =
   | 'import'
   | 'exec'
   | 'status'
+  | 'upgrade'
   | 'version';
 
 /** Set used for O(1) membership checks without type widening. */
@@ -100,6 +102,7 @@ const KNOWN_SUBCOMMANDS = new Set<string>([
   'import',
   'exec',
   'status',
+  'upgrade',
   'version',
 ] satisfies Subcommand[]);
 
@@ -217,6 +220,7 @@ function printUsage(): void {
   print('  info       Display a summary of the current vault');
   print('  triage     Process Inbox/ using cron triage rules');
   print('  migrate    Migrate an existing vault to AgentFS layout');
+  print('  upgrade    Upgrade vault schema to current version');
   print('  sync       Sync compiled outputs to all registered agents');
   print('  import     Import external notes/files into the vault');
   print('  exec       Run a one-off cron.d/ job manually');
@@ -305,6 +309,7 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     if (effectiveSubcommand === 'info') return infoCommand(flags);
     if (effectiveSubcommand === 'triage') return triageCommand(flags);
     if (effectiveSubcommand === 'migrate') return migrateCommand(flags);
+    if (effectiveSubcommand === 'upgrade') return upgradeCommand(flags);
     if (effectiveSubcommand === 'version') {
       if (flags.args.includes('--vault')) {
         const osRelease = await readOsRelease(flags.targetDir);
