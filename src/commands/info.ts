@@ -8,6 +8,8 @@ import { buildCompileContext } from '../compilers/base.js';
 import { readSecurityPolicy } from '../security/parser.js';
 import { parseSemanticMemory, listEpisodicDates, listProceduralSkills } from '../memory/index.js';
 import { CliFlags, printResult, printError } from '../utils/cli-flags.js';
+import { readOsRelease } from '../generators/os-release.js';
+import { CLI_VERSION } from '../utils/version.js';
 
 /**
  * Entry point for the `agentfs info` subcommand.
@@ -68,10 +70,21 @@ export async function infoCommand(flags: CliFlags): Promise<number> {
   const denyReadCount = policy.file_access.deny_read.length;
   const denyWriteCount = policy.file_access.deny_write.length;
 
+  // Version info
+  const osRelease = await readOsRelease(vaultRoot);
+  const vaultVersion = osRelease?.VERSION ?? 'unknown';
+  const schemaVersion = osRelease?.SCHEMA_VERSION ?? 'unknown';
+  const vaultCreated = osRelease?.VAULT_CREATED ?? 'unknown';
+  const lastUpgrade = osRelease?.LAST_UPGRADE ?? null;
+
   // Build human output
   let human = '\nAgentFS Info\n' + '═'.repeat(54) + '\n';
   human += `  Vault:      ${vaultName} (${profile})\n`;
   human += `  Owner:      ${ownerName}\n`;
+  human += `  Version:    vault v${vaultVersion} (schema v${schemaVersion}), CLI v${CLI_VERSION}\n`;
+  if (vaultCreated !== 'unknown') {
+    human += `  Created:    ${vaultCreated}${lastUpgrade ? `, upgraded ${lastUpgrade}` : ''}\n`;
+  }
   human += '\n';
   human += `  Memory:     ${semanticCount} semantic, ${episodicCount} episodic, ${proceduralCount} procedural\n`;
   human += `  Security:   ${securityMode} mode, ${denyReadCount} deny-read, ${denyWriteCount} deny-write\n`;
@@ -103,6 +116,13 @@ export async function infoCommand(flags: CliFlags): Promise<number> {
     vault: vaultName,
     owner: ownerName,
     profile,
+    version: {
+      vault: vaultVersion,
+      schema: schemaVersion,
+      cli: CLI_VERSION,
+      created: vaultCreated,
+      lastUpgrade,
+    },
     memory: {
       semantic: semanticCount,
       episodic: episodicCount,
