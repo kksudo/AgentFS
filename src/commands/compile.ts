@@ -27,6 +27,11 @@ import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 import { runHooks } from '../hooks/index.js';
 import { validateManifest } from '../utils/validate-manifest.js';
 import { generateMemoryIndex } from '../memory/memory-index.js';
+import { updateOsRelease, readOsRelease } from '../generators/os-release.js';
+import { CLI_VERSION } from '../utils/version.js';
+import { CURRENT_SCHEMA_VERSION } from '../migrations/index.js';
+
+const COMPILE_VERSION = CLI_VERSION;
 
 // ---------------------------------------------------------------------------
 // Registry of all known compilers.
@@ -244,6 +249,29 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
   }
 
   // -------------------------------------------------------------------------
+  // Check vault schema version — warn if outdated, block if newer.
+  // -------------------------------------------------------------------------
+
+  const osRelease = await readOsRelease(vaultRoot);
+  if (osRelease) {
+    if (osRelease.SCHEMA_VERSION > CURRENT_SCHEMA_VERSION) {
+      printError(
+        flags,
+        `Vault schema v${osRelease.SCHEMA_VERSION} is newer than CLI (v${CURRENT_SCHEMA_VERSION}). Upgrade the CLI: npm install -g create-agentfs@latest`,
+        'SCHEMA_TOO_NEW',
+      );
+      return 1;
+    }
+    if (osRelease.SCHEMA_VERSION < CURRENT_SCHEMA_VERSION) {
+      if (flags.outputFormat === 'human') {
+        process.stderr.write(
+          `Warning: Vault schema v${osRelease.SCHEMA_VERSION} is outdated (CLI expects v${CURRENT_SCHEMA_VERSION}). Run \`agentfs upgrade\` first.\n`,
+        );
+      }
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Determine which compilers to run.
   // -------------------------------------------------------------------------
 
@@ -310,6 +338,13 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
 
     const memoryIndexOutput = await generateMemoryIndex(vaultRoot);
     await writeOutputs([memoryIndexOutput], vaultRoot, dryRun);
+
+    // -----------------------------------------------------------------------
+    // Update .agentos/os-release with current CLI version.
+    // -----------------------------------------------------------------------
+
+    const osReleaseOutput = await updateOsRelease(vaultRoot, COMPILE_VERSION, dryRun);
+    await writeOutputs([osReleaseOutput], vaultRoot, dryRun);
 
     // Run post-compile hooks after all outputs have been written.
     await runHooks(vaultRoot, { name: 'post-compile', context: { agent: targetAgent ?? 'all', dryRun } });

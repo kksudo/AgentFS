@@ -49,7 +49,60 @@ If you are Claude Code, your instructions come from `CLAUDE.md`. If Cursor, `.cu
 
 These files are auto-generated. **Do not modify `CLAUDE.md`, `.cursorrules`, or `SOUL.md` manually.** If you want to change your permanent rules, you must either edit `.agentos/init.d/00-identity.md` (if permitted by the user) or ask the human to update it and run `agentfs compile`.
 
-## 5. Summary
+## 5. Setting Up the Vault
+
+If the user asks you to "set up", "configure", or "onboard" this vault, follow this flow:
+
+### Step 1: Assess current state
+
+```bash
+agentfs doctor          # check vault health
+agentfs info            # show current capabilities (if available)
+```
+
+### Step 2: Interview the user
+
+Ask about:
+- **Domain/industry** — fintech, healthtech, web dev, personal, etc.
+- **Tech stack** — languages, frameworks, databases, infrastructure
+- **Strict rules** — things you should NEVER do
+- **Preferences** — coding style, communication style, workflow preferences
+- **Security requirements** — PCI, HIPAA, SOC2, or general best practices
+- **Workflows** — recurring processes they follow (debugging, code review, deployment)
+
+### Step 3: Apply configuration
+
+Use CLI commands to persist what you learned:
+
+```bash
+# Facts about the user and project
+agentfs memory add semantic --json '{"type":"FACT","content":"stack is TypeScript, NestJS, PostgreSQL"}'
+
+# Preferences
+agentfs memory add semantic --json '{"type":"PREF","content":"strict TypeScript, no implicit any"}'
+
+# Things to avoid
+agentfs memory add semantic --json '{"type":"AVOID","content":"never log or display PII or tokens"}'
+
+# Security modules (if applicable)
+agentfs security add <module>
+
+# Procedural memory (workflows)
+agentfs memory add procedural --json '{"name":"code-review","steps":["..."]}'
+```
+
+### Step 4: Compile and verify
+
+```bash
+agentfs compile         # regenerate all native configs
+agentfs doctor          # verify everything is healthy
+```
+
+### Step 5: Summarize
+
+Tell the user what you configured: how many facts, preferences, avoids, which security modules, and what to do next.
+
+## 6. Summary
 
 Everything you need is in this folder structure. Treat this vault like a Linux system where you are a highly privileged daemon.
 

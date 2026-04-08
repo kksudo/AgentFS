@@ -54,3 +54,5 @@ export type {
   GeneratorResult,
   ScaffoldResult,
 } from './setup.js';
+
+export type { OsRelease } from '../generators/os-release.js';
