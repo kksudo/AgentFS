@@ -93,7 +93,18 @@ export const MIGRATIONS: Migration[] = [];
  * @returns Ordered array of migrations to apply.
  */
 export function getMigrationsForRange(from: number, to: number): Migration[] {
-  return MIGRATIONS
+  const filtered = MIGRATIONS
     .filter((m) => m.from >= from && m.to <= to)
     .sort((a, b) => a.from - b.from);
+
+  // Validate contiguous chain — each migration's `to` must equal the next's `from`.
+  for (let i = 0; i < filtered.length - 1; i++) {
+    if (filtered[i].to !== filtered[i + 1].from) {
+      throw new Error(
+        `Migration chain has a gap: v${filtered[i].to} → v${filtered[i + 1].from}. Missing migration for v${filtered[i].to}.`,
+      );
+    }
+  }
+
+  return filtered;
 }

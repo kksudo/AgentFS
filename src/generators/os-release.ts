@@ -67,10 +67,15 @@ export function parseOsRelease(content: string): OsRelease {
     result[key] = value;
   }
 
+  const schemaRaw = parseInt(result['SCHEMA_VERSION'] ?? '1', 10);
+  if (isNaN(schemaRaw)) {
+    throw new Error(`Corrupt os-release: SCHEMA_VERSION is not a valid number ("${result['SCHEMA_VERSION']}")`);
+  }
+
   const parsed: OsRelease = {
     NAME: result['NAME'] ?? 'AgentFS',
     VERSION: result['VERSION'] ?? 'unknown',
-    SCHEMA_VERSION: parseInt(result['SCHEMA_VERSION'] ?? '1', 10),
+    SCHEMA_VERSION: schemaRaw,
     VAULT_CREATED: result['VAULT_CREATED'] ?? 'unknown',
   };
 

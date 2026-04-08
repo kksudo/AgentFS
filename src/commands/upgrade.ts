@@ -248,6 +248,16 @@ export async function upgradeCommand(flags: CliFlags): Promise<number> {
 
   const migrations = getMigrationsForRange(osRelease.SCHEMA_VERSION, CURRENT_SCHEMA_VERSION);
 
+  // Validate migration chain covers the full gap — fail fast if incomplete.
+  if (migrations.length === 0 && osRelease.SCHEMA_VERSION < CURRENT_SCHEMA_VERSION) {
+    printError(
+      flags,
+      `No migrations registered for schema v${osRelease.SCHEMA_VERSION} → v${CURRENT_SCHEMA_VERSION}. This is a CLI bug — please report it.`,
+      'MIGRATION_GAP',
+    );
+    return 1;
+  }
+
   const allCreated: string[] = [];
   const allModified: string[] = [];
   const allDeleted: string[] = [];

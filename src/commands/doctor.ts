@@ -6,6 +6,7 @@ import { validateFrontmatter } from '../utils/validate-frontmatter.js';
 import { readManifest } from '../compilers/base.js';
 import { readOsRelease } from '../generators/os-release.js';
 import { CLI_VERSION } from '../utils/version.js';
+import { CURRENT_SCHEMA_VERSION } from '../migrations/index.js';
 
 const DOCTOR_VERSION = CLI_VERSION;
 
@@ -49,14 +50,16 @@ export async function doctorCommand(flags: CliFlags): Promise<number> {
   const osRelease = await readOsRelease(vaultRoot);
   if (osRelease === null) {
     checks.push({ name: 'OS release', passed: true, message: 'not found (run `agentfs compile` to generate)' });
-  } else if (osRelease.VERSION !== DOCTOR_VERSION) {
-    checks.push({
-      name: 'OS release',
-      passed: false,
-      message: `Vault was built with AgentFS v${osRelease.VERSION}, current CLI is v${DOCTOR_VERSION} — run \`agentfs compile\` to update`,
-    });
   } else {
-    checks.push({ name: 'OS release', passed: true, message: `v${osRelease.VERSION} (schema v${osRelease.SCHEMA_VERSION})` });
+    const schemaOk = osRelease.SCHEMA_VERSION === CURRENT_SCHEMA_VERSION;
+    const versionMatch = osRelease.VERSION === DOCTOR_VERSION;
+    let message = `v${osRelease.VERSION} (schema v${osRelease.SCHEMA_VERSION})`;
+    if (!schemaOk) {
+      message += ` — schema outdated, run \`agentfs upgrade\``;
+    } else if (!versionMatch) {
+      message += ` — run \`agentfs compile\` to update version`;
+    }
+    checks.push({ name: 'OS release', passed: schemaOk, message });
   }
 
   // Check 4: init.d/ exists

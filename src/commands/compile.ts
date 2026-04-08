@@ -253,11 +253,21 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
   // -------------------------------------------------------------------------
 
   const osRelease = await readOsRelease(vaultRoot);
-  if (osRelease && osRelease.SCHEMA_VERSION < CURRENT_SCHEMA_VERSION) {
-    if (flags.outputFormat === 'human') {
-      process.stderr.write(
-        `Warning: Vault schema v${osRelease.SCHEMA_VERSION} is outdated (CLI expects v${CURRENT_SCHEMA_VERSION}). Run \`agentfs upgrade\` first.\n`,
+  if (osRelease) {
+    if (osRelease.SCHEMA_VERSION > CURRENT_SCHEMA_VERSION) {
+      printError(
+        flags,
+        `Vault schema v${osRelease.SCHEMA_VERSION} is newer than CLI (v${CURRENT_SCHEMA_VERSION}). Upgrade the CLI: npm install -g create-agentfs@latest`,
+        'SCHEMA_TOO_NEW',
       );
+      return 1;
+    }
+    if (osRelease.SCHEMA_VERSION < CURRENT_SCHEMA_VERSION) {
+      if (flags.outputFormat === 'human') {
+        process.stderr.write(
+          `Warning: Vault schema v${osRelease.SCHEMA_VERSION} is outdated (CLI expects v${CURRENT_SCHEMA_VERSION}). Run \`agentfs upgrade\` first.\n`,
+        );
+      }
     }
   }
 
