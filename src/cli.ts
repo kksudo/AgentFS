@@ -43,9 +43,13 @@ import { doctorCommand, triageCommand, migrateCommand } from './commands/doctor.
 import { runSetupPrompts } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
 import { parseCliFlags, resolveSetupAnswers } from './utils/cli-flags.js';
+import { createRequire } from 'node:module';
 
-/** CLI version — kept in sync with package.json by convention. */
-export const VERSION = '0.1.5';
+const require = createRequire(import.meta.url);
+const pkg = require('../package.json') as { version: string };
+
+/** CLI version — read from package.json at runtime. */
+export const VERSION = pkg.version;
 
 /**
  * All subcommands recognised by the CLI.

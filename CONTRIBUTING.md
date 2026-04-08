@@ -59,6 +59,17 @@ pnpm link --global
 agentfs --help
 ```
 
+### Install from Local Repo
+
+```bash
+# Link globally (uses local build, updates live)
+npm link
+agentfs --help
+
+# Unlink when done
+npm unlink -g create-agentfs
+```
+
 ### All Commands
 
 ```bash

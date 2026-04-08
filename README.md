@@ -33,10 +33,32 @@ AgentFS isn't just a config generator; it's the **missing infrastructure layer**
   security/                      AGENT-MAP.md
 ```
 
-## Quick Start
+## Install
+
+```bash
+# Install globally from npm
+npm install -g create-agentfs
+
+# Verify
+agentfs --version
+```
+
+Or use without installing:
 
 ```bash
 npx create-agentfs my-vault
+```
+
+### Uninstall
+
+```bash
+npm uninstall -g create-agentfs
+```
+
+## Quick Start
+
+```bash
+agentfs init my-vault
 cd my-vault
 agentfs compile
 ```
