@@ -27,6 +27,10 @@ import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 import { runHooks } from '../hooks/index.js';
 import { validateManifest } from '../utils/validate-manifest.js';
 import { generateMemoryIndex } from '../memory/memory-index.js';
+import { updateOsRelease } from '../generators/os-release.js';
+import { CLI_VERSION } from '../utils/version.js';
+
+const COMPILE_VERSION = CLI_VERSION;
 
 // ---------------------------------------------------------------------------
 // Registry of all known compilers.
@@ -310,6 +314,13 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
 
     const memoryIndexOutput = await generateMemoryIndex(vaultRoot);
     await writeOutputs([memoryIndexOutput], vaultRoot, dryRun);
+
+    // -----------------------------------------------------------------------
+    // Update .agentos/os-release with current CLI version.
+    // -----------------------------------------------------------------------
+
+    const osReleaseOutput = await updateOsRelease(vaultRoot, COMPILE_VERSION, dryRun);
+    await writeOutputs([osReleaseOutput], vaultRoot, dryRun);
 
     // Run post-compile hooks after all outputs have been written.
     await runHooks(vaultRoot, { name: 'post-compile', context: { agent: targetAgent ?? 'all', dryRun } });

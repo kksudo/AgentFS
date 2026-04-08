@@ -42,6 +42,20 @@ jest.unstable_mockModule('../src/memory/memory-index.js', () => ({
   generateMemoryIndex: mockGenerateMemoryIndex,
 }));
 
+const mockUpdateOsRelease = jest.fn<any>().mockResolvedValue({
+  path: '.agentos/os-release',
+  content: 'NAME="AgentFS"\n',
+  managed: true,
+});
+
+jest.unstable_mockModule('../src/generators/os-release.js', () => ({
+  updateOsRelease: mockUpdateOsRelease,
+  generateOsRelease: jest.fn<any>().mockResolvedValue({ created: [], skipped: [] }),
+  readOsRelease: jest.fn<any>().mockResolvedValue(null),
+  parseOsRelease: jest.fn<any>(),
+  formatOsRelease: jest.fn<any>(),
+}));
+
 const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation((() => true) as any);
 const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation((() => true) as any);
 
@@ -122,7 +136,7 @@ describe('commands/compile', () => {
     expect(code).toBe(0);
     expect(mockClaudeCompile).toHaveBeenCalled();
     expect(mockGenerateAgentsFile).toHaveBeenCalled();
-    expect(mockWriteOutputs).toHaveBeenCalledTimes(3); // once for claude, once for AGENT-MAP.md, once for INDEX.md
+    expect(mockWriteOutputs).toHaveBeenCalledTimes(4); // once for claude, once for AGENT-MAP.md, once for INDEX.md, once for os-release
     expect(stdoutSpy).toHaveBeenCalledWith(expect.stringContaining('AgentFS compile complete'));
   });
 

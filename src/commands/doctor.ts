@@ -4,6 +4,10 @@ import { scanForInjections, readSecurityPolicy } from '../security/parser.js';
 import { CliFlags, printResult } from '../utils/cli-flags.js';
 import { validateFrontmatter } from '../utils/validate-frontmatter.js';
 import { readManifest } from '../compilers/base.js';
+import { readOsRelease } from '../generators/os-release.js';
+import { CLI_VERSION } from '../utils/version.js';
+
+const DOCTOR_VERSION = CLI_VERSION;
 
 // ---------------------------------------------------------------------------
 // Doctor command — Story 12.1
@@ -41,7 +45,21 @@ export async function doctorCommand(flags: CliFlags): Promise<number> {
     checks.push({ name: 'Manifest', passed: false, message: 'manifest.yaml not found' });
   }
 
-  // Check 3: init.d/ exists
+  // Check 3: os-release version check (advisory — missing file is a warning, not a failure)
+  const osRelease = await readOsRelease(vaultRoot);
+  if (osRelease === null) {
+    checks.push({ name: 'OS release', passed: true, message: 'not found (run `agentfs compile` to generate)' });
+  } else if (osRelease.VERSION !== DOCTOR_VERSION) {
+    checks.push({
+      name: 'OS release',
+      passed: false,
+      message: `Vault was built with AgentFS v${osRelease.VERSION}, current CLI is v${DOCTOR_VERSION} — run \`agentfs compile\` to update`,
+    });
+  } else {
+    checks.push({ name: 'OS release', passed: true, message: `v${osRelease.VERSION} (schema v${osRelease.SCHEMA_VERSION})` });
+  }
+
+  // Check 4: init.d/ exists
   try {
     await fs.access(path.join(vaultRoot, '.agentos/init.d'));
     checks.push({ name: 'Init scripts', passed: true, message: 'init.d/ exists' });
@@ -49,7 +67,7 @@ export async function doctorCommand(flags: CliFlags): Promise<number> {
     checks.push({ name: 'Init scripts', passed: false, message: 'init.d/ not found' });
   }
 
-  // Check 4: memory directory exists
+  // Check 5: memory directory exists
   try {
     await fs.access(path.join(vaultRoot, '.agentos/memory'));
     checks.push({ name: 'Memory system', passed: true, message: 'memory/ exists' });

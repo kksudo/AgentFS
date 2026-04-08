@@ -40,16 +40,15 @@ import { securityCommand } from './commands/security.js';
 import { secretCommand } from './commands/secret.js';
 import { syncCommand } from './commands/sync.js';
 import { doctorCommand, triageCommand, migrateCommand } from './commands/doctor.js';
+import { infoCommand } from './commands/info.js';
+import { readOsRelease } from './generators/os-release.js';
 import { runSetupPrompts } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
-import { parseCliFlags, resolveSetupAnswers } from './utils/cli-flags.js';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
-const pkg = require('../package.json') as { version: string };
+import { parseCliFlags, resolveSetupAnswers, printResult, printError } from './utils/cli-flags.js';
+import { CLI_VERSION } from './utils/version.js';
 
 /** CLI version — read from package.json at runtime. */
-export const VERSION = pkg.version;
+export const VERSION = CLI_VERSION;
 
 /**
  * All subcommands recognised by the CLI.
@@ -60,6 +59,7 @@ export const VERSION = pkg.version;
  * - `memory`   — inspect / edit Tulving memory layers
  * - `security` — manage AppArmor-style security policy
  * - `doctor`   — health-check the vault and diagnose problems
+ * - `info`     — display a summary of the current vault
  * - `triage`   — process Inbox/ using cron triage rules
  * - `migrate`  — migrate an existing vault to AgentFS layout
  * - `sync`     — sync compiled outputs to all registered agents
@@ -75,12 +75,14 @@ export type Subcommand =
   | 'security'
   | 'secret'
   | 'doctor'
+  | 'info'
   | 'triage'
   | 'migrate'
   | 'sync'
   | 'import'
   | 'exec'
-  | 'status';
+  | 'status'
+  | 'version';
 
 /** Set used for O(1) membership checks without type widening. */
 const KNOWN_SUBCOMMANDS = new Set<string>([
@@ -91,12 +93,14 @@ const KNOWN_SUBCOMMANDS = new Set<string>([
   'security',
   'secret',
   'doctor',
+  'info',
   'triage',
   'migrate',
   'sync',
   'import',
   'exec',
   'status',
+  'version',
 ] satisfies Subcommand[]);
 
 /** Returns true when `value` is a recognised subcommand. */
@@ -210,6 +214,7 @@ function printUsage(): void {
   print('  memory     Inspect and edit Tulving memory layers');
   print('  security   Manage AppArmor-style security policy');
   print('  doctor     Health-check the vault and diagnose problems');
+  print('  info       Display a summary of the current vault');
   print('  triage     Process Inbox/ using cron triage rules');
   print('  migrate    Migrate an existing vault to AgentFS layout');
   print('  sync       Sync compiled outputs to all registered agents');
@@ -297,8 +302,23 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     if (effectiveSubcommand === 'secret') return secretCommand(flags);
     if (effectiveSubcommand === 'sync') return syncCommand(flags);
     if (effectiveSubcommand === 'doctor') return doctorCommand(flags);
+    if (effectiveSubcommand === 'info') return infoCommand(flags);
     if (effectiveSubcommand === 'triage') return triageCommand(flags);
     if (effectiveSubcommand === 'migrate') return migrateCommand(flags);
+    if (effectiveSubcommand === 'version') {
+      if (flags.args.includes('--vault')) {
+        const osRelease = await readOsRelease(flags.targetDir);
+        if (osRelease === null) {
+          printError(flags, 'agentfs version: no os-release found — run `agentfs compile` first', 'OS_RELEASE_NOT_FOUND');
+          return 1;
+        }
+        const humanLine = `AgentFS vault v${osRelease.VERSION} (schema v${osRelease.SCHEMA_VERSION}, created ${osRelease.VAULT_CREATED})`;
+        printResult(flags, humanLine, osRelease as unknown as Record<string, unknown>);
+      } else {
+        printResult(flags, VERSION, { version: VERSION });
+      }
+      return 0;
+    }
     printStub(effectiveSubcommand);
     return 0;
   }
