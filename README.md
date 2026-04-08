@@ -49,6 +49,16 @@ Or use without installing:
 npx create-agentfs my-vault
 ```
 
+### Update
+
+```bash
+# Update to latest version
+npm install -g create-agentfs@latest
+
+# Upgrade existing vault to new version
+agentfs upgrade --dir ~/my-vault
+```
+
 ### Uninstall
 
 ```bash
