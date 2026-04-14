@@ -42,6 +42,8 @@ import { secretCommand } from './commands/secret.js';
 import { syncCommand } from './commands/sync.js';
 import { doctorCommand, triageCommand, migrateCommand } from './commands/doctor.js';
 import { infoCommand } from './commands/info.js';
+import { cleanCommand } from './commands/clean.js';
+import { selfcheckCommand, statusCommand } from './commands/selfcheck.js';
 import { readOsRelease } from './generators/os-release.js';
 import { runSetupPrompts } from './generators/prompts.js';
 import { scaffold, formatScaffoldSummary } from './generators/scaffold.js';
@@ -83,6 +85,8 @@ export type Subcommand =
   | 'import'
   | 'exec'
   | 'status'
+  | 'selfcheck'
+  | 'clean'
   | 'upgrade'
   | 'version';
 
@@ -102,6 +106,8 @@ const KNOWN_SUBCOMMANDS = new Set<string>([
   'import',
   'exec',
   'status',
+  'selfcheck',
+  'clean',
   'upgrade',
   'version',
 ] satisfies Subcommand[]);
@@ -224,7 +230,9 @@ function printUsage(): void {
   print('  sync       Sync compiled outputs to all registered agents');
   print('  import     Import external notes/files into the vault');
   print('  exec       Run a one-off cron.d/ job manually');
-  print('  status     Print current vault and agent runtime status');
+  print('  status     Print compact vault health summary');
+  print('  selfcheck  Spacecraft-style vault diagnostics (--quick, --deep)');
+  print('  clean      Remove AgentFS-managed files (--all, --dry-run, --force)');
   print('');
   print('Examples:');
   print('  agentfs compile --dry-run');
@@ -310,6 +318,9 @@ export async function main(argv: string[] = process.argv): Promise<number> {
     if (effectiveSubcommand === 'triage') return triageCommand(flags);
     if (effectiveSubcommand === 'migrate') return migrateCommand(flags);
     if (effectiveSubcommand === 'upgrade') return upgradeCommand(flags);
+    if (effectiveSubcommand === 'status') return statusCommand(flags);
+    if (effectiveSubcommand === 'selfcheck') return selfcheckCommand(flags);
+    if (effectiveSubcommand === 'clean') return cleanCommand(flags);
     if (effectiveSubcommand === 'version') {
       if (flags.args.includes('--vault')) {
         const osRelease = await readOsRelease(flags.targetDir);

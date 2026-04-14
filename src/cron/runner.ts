@@ -18,6 +18,7 @@ import type { CronJob, CronResult } from './types.js';
 import { consolidateJob } from './jobs/consolidate.js';
 import { heartbeatJob } from './jobs/heartbeat.js';
 import { inboxTriageJob } from './jobs/inbox-triage.js';
+import { distillationJob } from './jobs/distillation.js';
 
 // ---------------------------------------------------------------------------
 // Registry
@@ -28,6 +29,7 @@ export const CRON_REGISTRY: Record<string, CronJob> = {
   consolidate: consolidateJob,
   heartbeat: heartbeatJob,
   'inbox-triage': inboxTriageJob,
+  distillation: distillationJob,
 };
 
 // ---------------------------------------------------------------------------

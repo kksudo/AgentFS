@@ -104,3 +104,22 @@ NO MODIFYING SECURITY POLICY OR MANIFEST FILES.
 - {{{this}}}
 {{/each}}
 {{/if}}
+
+## Agent Commands
+
+> Vault maintenance commands you can run during sessions.
+
+| When | Command | Purpose |
+|------|---------|---------|
+| Start of session | `agentfs selfcheck --quick` | Verify vault health |
+| After learning new fact | `agentfs memory add semantic --json '{"type":"FACT","content":"..."}'` | Persist knowledge |
+| After editing manifest | `agentfs compile` | Recompile native configs |
+| Something feels wrong | `agentfs doctor --fix` | Auto-diagnose and repair |
+| Vault setup needed | `agentfs onboard --full` | Full guided vault setup |
+| End of session | `agentfs status --json` | Log final state |
+
+### Safety rules
+- NEVER run `agentfs clean --all` without explicit user instruction
+- NEVER delete memory files directly — use `agentfs memory` commands
+- NEVER edit compiled outputs (CLAUDE.md, .cursor/rules/) — edit manifest, then compile
+- All agent-initiated changes are logged to `.agentos/proc/agent-actions.log`
