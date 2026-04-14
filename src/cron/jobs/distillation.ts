@@ -37,6 +37,14 @@ import { serializeSemanticEntry } from '../../memory/parser.js';
 /** How many days back to scan for recurring lessons. */
 const DEFAULT_WINDOW_DAYS = 14;
 
+/**
+ * Inactivity threshold (days) before a PATTERN entry loses confidence.
+ * Must be ≥ DEFAULT_CONFIDENCE.decayDays (30) to fire at least one decay
+ * period per distillation run. Kept separate from DEFAULT_WINDOW_DAYS because
+ * the scan window and decay period are independent policy decisions.
+ */
+const DECAY_INACTIVITY_DAYS = 30;
+
 /** Minimum occurrences across distinct days before promoting to PATTERN. */
 const MIN_OCCURRENCES = 2;
 
@@ -109,7 +117,7 @@ async function applyDecayToFile(semanticPath: string): Promise<number> {
     if (line.startsWith('PATTERN:')) {
       const parsed = parseSemanticMemory(line);
       if (parsed.length === 1 && parsed[0].type === 'PATTERN' && !isSuperseded(parsed[0])) {
-        const decayed = decayPattern(parsed[0], DEFAULT_WINDOW_DAYS);
+        const decayed = decayPattern(parsed[0], DECAY_INACTIVITY_DAYS);
         if (decayed.confidence !== parsed[0].confidence) {
           decayCount++;
           newLines.push(serializeSemanticEntry(decayed));

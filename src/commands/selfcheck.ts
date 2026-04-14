@@ -151,8 +151,9 @@ async function checkDrift(vaultRoot: string): Promise<Check> {
 export async function selfcheckCommand(flags: CliFlags): Promise<number> {
   const vaultRoot = flags.targetDir;
   const args = flags.args;
-  const quick = args.includes('--quick');
+  // --deep takes precedence over --quick when both are supplied
   const deep = args.includes('--deep');
+  const quick = args.includes('--quick') && !deep;
 
   // Run checks
   const checks: Check[] = [];
@@ -243,14 +244,21 @@ export async function statusCommand(flags: CliFlags): Promise<number> {
     compileAge = 'not found';
   }
 
-  // Health
+  // Health — aggregate severity from security and drift checks, same logic as selfcheckCommand
   const driftOk = driftCheck.severity === 'ok';
-  const health = (activeEntries > 0 && compileAge !== 'not found') ? 'nominal' : 'degraded';
+  const statusChecks = [securityCheck, driftCheck];
+  const statusHasErrors = statusChecks.some((c) => c.severity === 'error');
+  const statusHasWarnings = statusChecks.some((c) => c.severity === 'warn');
+  const health = statusHasErrors ? 'degraded'
+    : statusHasWarnings ? 'warning'
+    : (activeEntries > 0 && compileAge !== 'not found') ? 'nominal'
+    : 'degraded';
 
-  // Security info
+  // Security info — extract parenthesised details without brittle string replacement
   let securityLine = 'defaults (no policy.yaml)';
   if (securityCheck.severity === 'ok') {
-    securityLine = securityCheck.message.replace('policy.yaml valid (', '').replace(/\)$/, '');
+    const match = securityCheck.message.match(/\((.+)\)$/);
+    securityLine = match ? match[1] : securityCheck.message;
   }
 
   // Build status line

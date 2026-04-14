@@ -140,7 +140,7 @@ export async function cleanCommand(flags: CliFlags): Promise<number> {
     const ok = await confirm(`\nThis will remove ${existing.length} file(s). Continue?`);
     if (!ok) {
       process.stdout.write('Aborted.\n');
-      return 1;
+      return 0;
     }
   } else if (flags.outputFormat !== 'json') {
     process.stdout.write(summary);

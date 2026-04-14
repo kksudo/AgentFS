@@ -445,7 +445,7 @@ export async function onboardCommand(flags: CliFlags): Promise<number> {
     }
 
     let fullAnswers: FullAnswers;
-    const fullInput = await resolveInput(flags);
+    const fullInput = input; // same JSON/config source as the base onboard input
 
     if (fullInput !== null) {
       fullAnswers = {

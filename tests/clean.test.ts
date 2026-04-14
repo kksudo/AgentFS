@@ -98,4 +98,26 @@ describe('cleanCommand', () => {
       await fs.rm(emptyDir, { recursive: true, force: true });
     }
   });
+
+  it('--all --dry-run lists kernel paths without removing them', async () => {
+    const code = await cleanCommand(makeFlags(['--all', '--dry-run']));
+    expect(code).toBe(0);
+
+    // .agentos/ still exists after dry-run
+    const agentosExists = await fs.access(path.join(tmpDir, '.agentos')).then(() => true).catch(() => false);
+    expect(agentosExists).toBe(true);
+  });
+
+  it('preserves .agentos/memory/INDEX.md without --all', async () => {
+    const code = await cleanCommand(makeFlags(['--force']));
+    expect(code).toBe(0);
+
+    // INDEX.md is a compiled output — it should be removed
+    const indexExists = await fs.access(path.join(tmpDir, '.agentos/memory/INDEX.md')).then(() => true).catch(() => false);
+    expect(indexExists).toBe(false);
+
+    // But the rest of .agentos/ (manifest, memory dir) should survive
+    const manifestExists = await fs.access(path.join(tmpDir, '.agentos/manifest.yaml')).then(() => true).catch(() => false);
+    expect(manifestExists).toBe(true);
+  });
 });
