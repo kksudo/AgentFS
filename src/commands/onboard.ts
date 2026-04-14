@@ -503,7 +503,10 @@ export async function onboardCommand(flags: CliFlags): Promise<number> {
 
     try {
       fullAppended = await appendSemanticEntries(semanticPath, fullEntries);
-    } catch {
+    } catch (err) {
+      process.stderr.write(
+        `Warning: failed to save --full entries to semantic memory: ${err instanceof Error ? err.message : String(err)}\n`,
+      );
       // Non-fatal — basic onboard succeeded
     }
   }

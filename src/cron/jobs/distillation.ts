@@ -99,21 +99,22 @@ async function applyDecayToFile(semanticPath: string): Promise<number> {
     return 0;
   }
 
-  const entries = parseSemanticMemory(content);
   let decayCount = 0;
   const newLines: string[] = [];
 
-  // Rebuild file line by line, replacing PATTERN entries with decayed versions
+  // Rebuild file line by line, parsing each PATTERN line independently.
+  // This avoids the false-positive substring matching that occurs when
+  // correlating pre-parsed entries back against raw lines.
   for (const line of content.split('\n')) {
-    const entryMatch = entries.find(
-      (e) => e.type === 'PATTERN' && line.startsWith(`PATTERN:`) && line.includes(e.content),
-    );
-    if (entryMatch && !isSuperseded(entryMatch)) {
-      const decayed = decayPattern(entryMatch, DEFAULT_WINDOW_DAYS);
-      if (decayed.confidence !== entryMatch.confidence) {
-        decayCount++;
-        newLines.push(serializeSemanticEntry(decayed));
-        continue;
+    if (line.startsWith('PATTERN:')) {
+      const parsed = parseSemanticMemory(line);
+      if (parsed.length === 1 && parsed[0].type === 'PATTERN' && !isSuperseded(parsed[0])) {
+        const decayed = decayPattern(parsed[0], DEFAULT_WINDOW_DAYS);
+        if (decayed.confidence !== parsed[0].confidence) {
+          decayCount++;
+          newLines.push(serializeSemanticEntry(decayed));
+          continue;
+        }
       }
     }
     newLines.push(line);
@@ -185,17 +186,27 @@ export const distillationJob: CronJob = {
       }
     }
 
-    // 4. Promote recurring lessons to PATTERN entries
+    // 4. Promote recurring lessons to PATTERN entries.
+    // Read current semantic content once for dedup check — appendSemanticEntry
+    // skips duplicates silently, which would inflate the promoted counter.
+    const currentSemantic = await fs.readFile(semanticPath, 'utf8');
+    const existingEntries = parseSemanticMemory(currentSemantic);
+
     let promoted = 0;
-    for (const [, { count, raw }] of occurrences) {
+    for (const [key, { count, raw }] of occurrences) {
       if (count >= MIN_OCCURRENCES) {
-        await appendSemanticEntry(semanticPath, {
-          type: 'PATTERN',
-          content: raw,
-          status: 'active',
-          confidence: 0.3,
-        });
-        promoted++;
+        const alreadyExists = existingEntries.some(
+          (e) => e.type === 'PATTERN' && normalise(e.content) === key,
+        );
+        if (!alreadyExists) {
+          await appendSemanticEntry(semanticPath, {
+            type: 'PATTERN',
+            content: raw,
+            status: 'active',
+            confidence: 0.3,
+          });
+          promoted++;
+        }
       }
     }
 

@@ -95,8 +95,8 @@ async function removeIfExists(absPath: string): Promise<boolean> {
 export async function cleanCommand(flags: CliFlags): Promise<number> {
   const vaultRoot = flags.targetDir;
 
-  // Parse sub-flags from remaining args
-  const args = flags.args.slice(1); // drop "clean"
+  // Parse sub-flags from remaining args (cli.ts already strips the subcommand name)
+  const args = flags.args;
   const removeAll = args.includes('--all');
   const dryRun = args.includes('--dry-run');
   const force = args.includes('--force');
