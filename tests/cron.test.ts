@@ -30,6 +30,7 @@ describe('cron system', () => {
       expect(CRON_REGISTRY).toHaveProperty('consolidate');
       expect(CRON_REGISTRY).toHaveProperty('heartbeat');
       expect(CRON_REGISTRY).toHaveProperty('inbox-triage');
+      expect(CRON_REGISTRY).toHaveProperty('distillation');
     });
 
     test('runCronJob returns error for unknown job', async () => {
@@ -114,7 +115,7 @@ describe('cron system', () => {
       );
 
       const results = await runAllCronJobs(tmpVault);
-      expect(results).toHaveLength(3);
+      expect(results).toHaveLength(4); // consolidate, heartbeat, inbox-triage, distillation
       // At least consolidate and heartbeat should succeed
       const consolidateResult = results.find((r) => r.job === 'consolidate');
       expect(consolidateResult?.success).toBe(true);
