@@ -16,6 +16,9 @@
  * @module commands/compile
  */
 
+import os from 'node:os';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import type { AgentRuntime, CompileContext, CompileOutput, CompileResult } from '../types/index.js';
 import { buildCompileContext, writeOutputs } from '../compilers/base.js';
 import { claudeCompiler } from '../compilers/claude.js';
@@ -30,6 +33,14 @@ import { generateMemoryIndex } from '../memory/memory-index.js';
 import { updateOsRelease, readOsRelease } from '../generators/os-release.js';
 import { CLI_VERSION } from '../utils/version.js';
 import { CURRENT_SCHEMA_VERSION } from '../migrations/index.js';
+import {
+  type CompileCache,
+  hashContent,
+  isCacheHit,
+  readCache,
+  updateCache,
+  writeCache,
+} from '../compilers/cache.js';
 
 const COMPILE_VERSION = CLI_VERSION;
 
@@ -45,6 +56,49 @@ const COMPILER_REGISTRY: Record<AgentRuntime, AgentCompiler> = {
 };
 
 // ---------------------------------------------------------------------------
+// Global path mapping (--global flag)
+// ---------------------------------------------------------------------------
+
+/** Global config directories for each agent runtime. */
+const GLOBAL_PATHS: Record<AgentRuntime, string> = {
+  claude: path.join(os.homedir(), '.claude'),
+  cursor: path.join(os.homedir(), '.cursor', 'rules'),
+  openclaw: path.join(os.homedir(), '.openclaw'),
+};
+
+/**
+ * Map a vault-relative output path to its global agent config equivalent.
+ *
+ * Returns null if this output has no global mapping.
+ *
+ * @param localRelPath - Vault-relative path (e.g. `CLAUDE.md`, `.cursor/rules/foo.mdc`)
+ * @param vaultRoot - Absolute vault root (unused, kept for future use)
+ * @returns Absolute global path or null
+ */
+export function mapToGlobalPath(localRelPath: string, _vaultRoot: string): string | null {
+  // claude: CLAUDE.md → ~/.claude/CLAUDE.md
+  if (localRelPath === 'CLAUDE.md') {
+    return path.join(GLOBAL_PATHS.claude, 'CLAUDE.md');
+  }
+
+  // cursor: .cursor/rules/*.mdc → ~/.cursor/rules/*.mdc
+  const cursorPrefix = '.cursor/rules/';
+  if (localRelPath.startsWith(cursorPrefix)) {
+    const filename = localRelPath.slice(cursorPrefix.length);
+    return path.join(GLOBAL_PATHS.cursor, filename);
+  }
+
+  // openclaw: .openclaw/*.md → ~/.openclaw/*.md
+  const openclawPrefix = '.openclaw/';
+  if (localRelPath.startsWith(openclawPrefix)) {
+    const filename = localRelPath.slice(openclawPrefix.length);
+    return path.join(GLOBAL_PATHS.openclaw, filename);
+  }
+
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Arg parsing
 // ---------------------------------------------------------------------------
 
@@ -56,6 +110,8 @@ interface CompileArgs {
   agent: AgentRuntime | undefined;
   /** When true, show what would be written without touching disk. */
   dryRun: boolean;
+  /** When true, also write compiled outputs to global agent config directories. */
+  global: boolean;
 }
 
 /**
@@ -80,13 +136,14 @@ function isAgentRuntime(value: string): value is AgentRuntime {
 function parseArgs(flags: CliFlags): CompileArgs {
   const args = flags.args;
   const dryRun = args.includes('--dry-run');
+  const global = args.includes('--global');
   const positionals = args.filter((a) => !a.startsWith('--'));
   const agentArg = positionals[0];
 
   const agent: AgentRuntime | undefined =
     agentArg !== undefined && isAgentRuntime(agentArg) ? agentArg : undefined;
 
-  return { agent, dryRun };
+  return { agent, dryRun, global };
 }
 
 // ---------------------------------------------------------------------------
@@ -99,11 +156,15 @@ function parseArgs(flags: CliFlags): CompileArgs {
  * @param results - All CompileResult objects from agent drivers
  * @param agentMapOutput - The AGENT-MAP.md output
  * @param dryRun - Whether this was a preview run
+ * @param cacheStats - Number of skipped (cached) and written outputs
+ * @param globalWrites - Absolute global paths that were written
  */
 function formatSummary(
   results: CompileResult[],
   agentMapOutput: CompileOutput,
   dryRun: boolean,
+  cacheStats: { skipped: number; written: number } = { skipped: 0, written: 0 },
+  globalWrites: string[] = [],
 ): string {
   const verb = dryRun ? 'Would write' : 'Wrote';
   const prefix = dryRun ? '[dry-run] ' : '';
@@ -116,8 +177,13 @@ function formatSummary(
   for (const result of results) {
     lines.push(`  Agent: ${result.agent}`);
     for (const output of result.outputs) {
-      const managed = output.managed ? '' : ' (skipped — not managed)';
-      lines.push(`    ${verb}: ${output.path}${managed}`);
+      if (!output.managed) {
+        lines.push(`    ${verb}: ${output.path} (skipped — not managed)`);
+      } else if ((output as CompileOutput & { skipped?: boolean }).skipped) {
+        lines.push(`    ${verb}: ${output.path} (cached)`);
+      } else {
+        lines.push(`    ${verb}: ${output.path} (updated)`);
+      }
     }
     if (result.summary) {
       lines.push(`    ${result.summary}`);
@@ -126,6 +192,22 @@ function formatSummary(
   }
 
   lines.push(`  ${verb}: ${agentMapOutput.path} (shared)`);
+
+  if (cacheStats.skipped > 0 || cacheStats.written > 0) {
+    lines.push('');
+    lines.push(`  Cache: ${cacheStats.written} updated, ${cacheStats.skipped} unchanged`);
+  }
+
+  if (globalWrites.length > 0) {
+    lines.push('');
+    for (const gp of globalWrites) {
+      const displayPath = gp.startsWith(os.homedir())
+        ? gp.replace(os.homedir(), '~')
+        : gp;
+      lines.push(`  [global] Wrote: ${displayPath}`);
+    }
+  }
+
   lines.push('');
 
   return lines.join('\n');
@@ -183,7 +265,7 @@ export function validateContext(context: CompileContext): string[] {
  * @returns 0 on success, 1 on error
  */
 export async function compileCommand(flags: CliFlags): Promise<number> {
-  const { agent: targetAgent, dryRun } = parseArgs(flags);
+  const { agent: targetAgent, dryRun, global: globalFlag } = parseArgs(flags);
 
   // Vault root is from flags, or CWD if not specified.
   const vaultRoot = flags.targetDir;
@@ -312,13 +394,41 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
     // Run pre-compile hooks before any compilation.
     await runHooks(vaultRoot, { name: 'pre-compile', context: { agent: targetAgent ?? 'all', dryRun } });
 
+    // Load compile cache for incremental compilation.
+    const cache: CompileCache = await readCache(vaultRoot);
+    const cacheStats = { skipped: 0, written: 0 };
+
+    /**
+     * Apply cache filtering to a list of managed outputs.
+     * Marks cached outputs with `skipped: true` and updates cache entries
+     * for outputs that will be written. Returns the subset that needs writing.
+     */
+    function filterCached(outputs: CompileOutput[]): CompileOutput[] {
+      const toWrite: CompileOutput[] = [];
+      for (const output of outputs) {
+        const contentHash = hashContent(output.content);
+        if (isCacheHit(cache, output.path, contentHash)) {
+          (output as CompileOutput & { skipped?: boolean }).skipped = true;
+          cacheStats.skipped++;
+        } else {
+          if (!dryRun) {
+            updateCache(cache, output.path, contentHash);
+          }
+          cacheStats.written++;
+          toWrite.push(output);
+        }
+      }
+      return toWrite;
+    }
+
     for (const compiler of compilersToRun) {
       const result = await compiler.compile(context);
       results.push(result);
 
       // Ownership protection — only write files AgentFS owns.
       const managedOutputs = result.outputs.filter((o) => o.managed);
-      await writeOutputs(managedOutputs, vaultRoot, dryRun);
+      const toWrite = filterCached(managedOutputs);
+      await writeOutputs(toWrite, vaultRoot, dryRun);
     }
 
     // -----------------------------------------------------------------------
@@ -326,10 +436,9 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
     // -----------------------------------------------------------------------
 
     const agentMapOutput = await generateAgentsFile(context);
-    // AGENT-MAP.md is always managed — no extra guard needed, but we respect
-    // the contract anyway for consistency.
     if (agentMapOutput.managed) {
-      await writeOutputs([agentMapOutput], vaultRoot, dryRun);
+      const toWrite = filterCached([agentMapOutput]);
+      await writeOutputs(toWrite, vaultRoot, dryRun);
     }
 
     // -----------------------------------------------------------------------
@@ -344,17 +453,49 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
     // -----------------------------------------------------------------------
 
     const osReleaseOutput = await updateOsRelease(vaultRoot, COMPILE_VERSION, dryRun);
-    await writeOutputs([osReleaseOutput], vaultRoot, dryRun);
+    await writeOutputs(filterCached([osReleaseOutput]), vaultRoot, dryRun);
+
+    // -----------------------------------------------------------------------
+    // Persist updated cache (skip on dry-run).
+    // -----------------------------------------------------------------------
+
+    if (!dryRun) {
+      await writeCache(vaultRoot, cache);
+    }
+
+    // -----------------------------------------------------------------------
+    // Global writes (--global flag).
+    // -----------------------------------------------------------------------
+
+    const globalWrites: string[] = [];
+
+    if (globalFlag) {
+      // Collect all managed outputs from all compiler results.
+      const allOutputs: CompileOutput[] = results.flatMap((r) => r.outputs);
+      allOutputs.push(agentMapOutput);
+
+      for (const output of allOutputs) {
+        if (!output.managed) continue;
+        const globalPath = mapToGlobalPath(output.path, vaultRoot);
+        if (globalPath === null) continue;
+        if (!dryRun) {
+          await fs.mkdir(path.dirname(globalPath), { recursive: true });
+          await fs.writeFile(globalPath, output.content, 'utf-8');
+        }
+        globalWrites.push(globalPath);
+      }
+    }
 
     // Run post-compile hooks after all outputs have been written.
     await runHooks(vaultRoot, { name: 'post-compile', context: { agent: targetAgent ?? 'all', dryRun } });
 
-    printResult(flags, formatSummary(results, agentMapOutput, dryRun), {
+    printResult(flags, formatSummary(results, agentMapOutput, dryRun, cacheStats, globalWrites), {
       agent: targetAgent || 'all',
       dryRun,
       results,
       agentMap: agentMapOutput,
-      warnings
+      warnings,
+      cacheStats,
     });
     return 0;
   } catch (err) {

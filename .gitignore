@@ -22,7 +22,8 @@ coverage/
 
 # Runtime (if testing with a real vault)
 .agentos/proc/
-.agentos/secrets/decrypted/
+.agentos/secrets/
+.agentos/compile-cache.json
 
 # BMAD Method
 _bmad-output/
