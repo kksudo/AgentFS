@@ -194,14 +194,38 @@ export function checkCommand(
   policy: SecurityPolicy,
 ): 'blocked' | 'ask' | 'allowed' {
   const lower = command.toLowerCase();
-  
+
   if (policy.commands.blocked.some((b) => lower.includes(b.toLowerCase()))) {
     return 'blocked';
   }
-  
+
   if (policy.commands.ask_before.some((a) => lower.startsWith(a.toLowerCase()))) {
     return 'ask';
   }
 
   return 'allowed';
+}
+
+/**
+ * Append a security violation entry to `.agentos/security/violations.log`.
+ *
+ * Format: `YYYY-MM-DD HH:MM:SS [TYPE] detail\n`
+ *
+ * @param vaultRoot - Absolute path to vault root
+ * @param type      - Violation category (e.g. 'INJECTION', 'EXFIL')
+ * @param detail    - Human-readable description of the violation
+ */
+export async function logViolation(
+  vaultRoot: string,
+  type: string,
+  detail: string,
+): Promise<void> {
+  const logPath = path.join(vaultRoot, '.agentos/security/violations.log');
+  await fs.mkdir(path.dirname(logPath), { recursive: true });
+
+  const now = new Date();
+  const timestamp = now.toISOString().replace('T', ' ').slice(0, 19);
+  const line = `${timestamp} [${type}] ${detail}\n`;
+
+  await fs.appendFile(logPath, line, 'utf8');
 }

@@ -4,14 +4,19 @@
  * Story 8.1: Manages secrets in `.agentos/secrets/vault.yaml` (encrypted)
  * and `.agentos/secrets/refs.yaml` (reference names only).
  *
- * In a full implementation, this would use SOPS/age for real encryption.
- * For MVP, we use a simple base64 encoding with a marker to simulate
- * the encrypted-at-rest pattern. The API surface is identical to what
- * a SOPS integration would provide.
+ * Encryption: AES-256-GCM using Node.js built-in `crypto` module.
+ * Format: ENC[aes256gcm:iv_hex:auth_tag_hex:ciphertext_hex]
+ *
+ * Key management: 32-byte random key stored in `.agentos/secrets/.vault-key`
+ * (hex-encoded). Generated on first use. File permissions set to 0o600.
+ *
+ * Backwards compatibility: old ENC[agentfs:base64] values are decoded
+ * transparently on read (migration path). New writes always use AES-256-GCM.
  *
  * @module secrets/vault
  */
 
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import yaml from 'js-yaml';
@@ -19,10 +24,17 @@ import yaml from 'js-yaml';
 const SECRETS_DIR = '.agentos/secrets';
 const VAULT_FILE = 'vault.yaml';
 const REFS_FILE = 'refs.yaml';
+const KEY_FILE = '.vault-key';
 
-/** Header marker for "encrypted" values. */
-const ENC_PREFIX = 'ENC[agentfs:';
-const ENC_SUFFIX = ']';
+const ALGORITHM = 'aes-256-gcm';
+
+/** New AES-256-GCM format prefix. */
+const AES_PREFIX = 'ENC[aes256gcm:';
+const AES_SUFFIX = ']';
+
+/** Legacy base64 format prefix (read-only backwards compatibility). */
+const LEGACY_PREFIX = 'ENC[agentfs:';
+const LEGACY_SUFFIX = ']';
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -38,17 +50,66 @@ interface RefsData {
   refs: string[];
 }
 
-function encode(value: string): string {
-  return `${ENC_PREFIX}${Buffer.from(value).toString('base64')}${ENC_SUFFIX}`;
+async function getOrCreateKey(vaultRoot: string): Promise<Buffer> {
+  const keyPath = path.join(vaultRoot, SECRETS_DIR, KEY_FILE);
+  try {
+    const hex = await fs.readFile(keyPath, 'utf8');
+    return Buffer.from(hex.trim(), 'hex');
+  } catch {
+    const key = crypto.randomBytes(32);
+    await fs.mkdir(path.join(vaultRoot, SECRETS_DIR), { recursive: true });
+    await fs.writeFile(keyPath, key.toString('hex'), 'utf8');
+    // Restrict permissions (best-effort on non-Windows)
+    try { await fs.chmod(keyPath, 0o600); } catch { /* ignore on Windows */ }
+    return key;
+  }
 }
 
-function decode(encoded: string): string {
-  const inner = encoded.slice(ENC_PREFIX.length, -ENC_SUFFIX.length);
+function encrypt(value: string, key: Buffer): string {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+  const ciphertext = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  const authTag = (cipher as crypto.CipherGCM).getAuthTag();
+  return `${AES_PREFIX}${iv.toString('hex')}:${authTag.toString('hex')}:${ciphertext.toString('hex')}${AES_SUFFIX}`;
+}
+
+function decrypt(encoded: string, key: Buffer): string {
+  const inner = encoded.slice(AES_PREFIX.length, -AES_SUFFIX.length);
+  const [ivHex, authTagHex, ciphertextHex] = inner.split(':');
+  const iv = Buffer.from(ivHex, 'hex');
+  const authTag = Buffer.from(authTagHex, 'hex');
+  const ciphertext = Buffer.from(ciphertextHex, 'hex');
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv) as crypto.DecipherGCM;
+  decipher.setAuthTag(authTag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+}
+
+function isAesEncrypted(value: string): boolean {
+  return value.startsWith(AES_PREFIX) && value.endsWith(AES_SUFFIX);
+}
+
+function isLegacyEncoded(value: string): boolean {
+  return value.startsWith(LEGACY_PREFIX) && value.endsWith(LEGACY_SUFFIX);
+}
+
+/** Decode a legacy base64-encoded value. */
+function decodeLegacy(encoded: string): string {
+  const inner = encoded.slice(LEGACY_PREFIX.length, -LEGACY_SUFFIX.length);
   return Buffer.from(inner, 'base64').toString('utf8');
 }
 
-function isEncoded(value: string): boolean {
-  return value.startsWith(ENC_PREFIX) && value.endsWith(ENC_SUFFIX);
+/**
+ * Decrypt a vault entry regardless of format (AES or legacy).
+ * Returns null if the value format is unrecognised.
+ */
+async function decryptEntry(encoded: string, key: Buffer): Promise<string | null> {
+  if (isAesEncrypted(encoded)) {
+    return decrypt(encoded, key);
+  }
+  if (isLegacyEncoded(encoded)) {
+    return decodeLegacy(encoded);
+  }
+  return null;
 }
 
 async function ensureDir(vaultRoot: string): Promise<string> {
@@ -92,7 +153,7 @@ async function writeRefs(vaultRoot: string, data: RefsData): Promise<void> {
 // ---------------------------------------------------------------------------
 
 /**
- * Add a secret to the vault.
+ * Add a secret to the vault (AES-256-GCM encrypted).
  *
  * @param vaultRoot - Vault root path
  * @param name      - Secret name (e.g. 'github-token')
@@ -103,8 +164,9 @@ export async function addSecret(
   name: string,
   value: string,
 ): Promise<void> {
+  const key = await getOrCreateKey(vaultRoot);
   const vault = await readVault(vaultRoot);
-  vault.secrets[name] = encode(value);
+  vault.secrets[name] = encrypt(value, key);
   await writeVault(vaultRoot, vault);
 
   const refs = await readRefs(vaultRoot);
@@ -151,7 +213,7 @@ export async function listSecrets(vaultRoot: string): Promise<string[]> {
 }
 
 /**
- * Rotate a secret (re-encrypt with new value).
+ * Rotate a secret (re-encrypt with new value using AES-256-GCM).
  *
  * @param vaultRoot - Vault root path
  * @param name      - Secret name to rotate
@@ -166,13 +228,15 @@ export async function rotateSecret(
   const vault = await readVault(vaultRoot);
   if (!(name in vault.secrets)) return false;
 
-  vault.secrets[name] = encode(newValue);
+  const key = await getOrCreateKey(vaultRoot);
+  vault.secrets[name] = encrypt(newValue, key);
   await writeVault(vaultRoot, vault);
   return true;
 }
 
 /**
- * Get a single secret's plaintext value.
+ * Get a single secret's plaintext value. Supports both AES-256-GCM and
+ * legacy base64 formats (transparent migration).
  *
  * @param vaultRoot - Vault root path
  * @param name      - Secret name to fetch
@@ -183,9 +247,10 @@ export async function getSecret(
   name: string,
 ): Promise<string | null> {
   const vault = await readVault(vaultRoot);
-  const encrypted = vault.secrets[name];
-  if (!encrypted || !isEncoded(encrypted)) return null;
-  return decode(encrypted);
+  const encoded = vault.secrets[name];
+  if (!encoded) return null;
+  const key = await getOrCreateKey(vaultRoot);
+  return decryptEntry(encoded, key);
 }
 
 /**
@@ -199,10 +264,12 @@ export async function decryptSecrets(
   vaultRoot: string,
 ): Promise<Record<string, string>> {
   const vault = await readVault(vaultRoot);
+  const key = await getOrCreateKey(vaultRoot);
   const result: Record<string, string> = {};
-  for (const [name, encrypted] of Object.entries(vault.secrets)) {
-    if (isEncoded(encrypted)) {
-      result[name.toUpperCase().replace(/-/g, '_')] = decode(encrypted);
+  for (const [name, encoded] of Object.entries(vault.secrets)) {
+    const plaintext = await decryptEntry(encoded, key);
+    if (plaintext !== null) {
+      result[name.toUpperCase().replace(/-/g, '_')] = plaintext;
     }
   }
   return result;
@@ -225,4 +292,77 @@ export async function resolveSecretRefs(
     const envKey = name.toUpperCase().replace(/-/g, '_');
     return secrets[envKey] ?? ('${{secret:' + name + '}}');
   });
+}
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+/** Result of a vault audit. */
+export interface VaultAuditResult {
+  /** Total number of secrets in vault.yaml. */
+  count: number;
+  /** Whether the .vault-key file exists. */
+  hasKeyFile: boolean;
+  /** Encryption format detected across all stored entries. */
+  encryption: 'aes-256-gcm' | 'legacy-base64' | 'mixed' | 'empty';
+  /** Number of entries in refs.yaml. */
+  refsCount: number;
+  /** Vault entries that have no matching ref (orphaned). */
+  orphanedEntries: string[];
+  /** Refs that have no corresponding vault entry (missing). */
+  missingEntries: string[];
+}
+
+/**
+ * Audit the vault for integrity and encryption status.
+ *
+ * @param vaultRoot - Vault root path
+ * @returns VaultAuditResult
+ */
+export async function auditVault(vaultRoot: string): Promise<VaultAuditResult> {
+  const keyPath = path.join(vaultRoot, SECRETS_DIR, KEY_FILE);
+  let hasKeyFile = false;
+  try {
+    await fs.access(keyPath);
+    hasKeyFile = true;
+  } catch { /* not present */ }
+
+  const vault = await readVault(vaultRoot);
+  const refs = await readRefs(vaultRoot);
+
+  const vaultKeys = Object.keys(vault.secrets);
+  const refSet = new Set(refs.refs);
+  const vaultSet = new Set(vaultKeys);
+
+  const orphanedEntries = vaultKeys.filter((k) => !refSet.has(k));
+  const missingEntries = refs.refs.filter((r) => !vaultSet.has(r));
+
+  // Determine encryption format
+  let aesCount = 0;
+  let legacyCount = 0;
+  for (const value of Object.values(vault.secrets)) {
+    if (isAesEncrypted(value)) aesCount++;
+    else if (isLegacyEncoded(value)) legacyCount++;
+  }
+
+  let encryption: VaultAuditResult['encryption'];
+  if (aesCount === 0 && legacyCount === 0) {
+    encryption = 'empty';
+  } else if (aesCount > 0 && legacyCount === 0) {
+    encryption = 'aes-256-gcm';
+  } else if (legacyCount > 0 && aesCount === 0) {
+    encryption = 'legacy-base64';
+  } else {
+    encryption = 'mixed';
+  }
+
+  return {
+    count: vaultKeys.length,
+    hasKeyFile,
+    encryption,
+    refsCount: refs.refs.length,
+    orphanedEntries,
+    missingEntries,
+  };
 }

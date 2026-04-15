@@ -8,9 +8,12 @@ export {
   removeSecret,
   listSecrets,
   rotateSecret,
+  getSecret,
   decryptSecrets,
   resolveSecretRefs,
+  auditVault,
 } from './vault.js';
+export type { VaultAuditResult } from './vault.js';
 
 export {
   scanForExfiltration,

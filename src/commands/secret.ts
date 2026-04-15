@@ -6,6 +6,7 @@
  *   agentfs secret remove <name>    — remove secret
  *   agentfs secret list             — list secret names (never values)
  *   agentfs secret rotate <name>    — re-encrypt with new value
+ *   agentfs secret audit            — integrity and encryption audit
  *
  * @module commands/secret
  */
@@ -16,6 +17,7 @@ import {
   listSecrets,
   rotateSecret,
   getSecret,
+  auditVault,
 } from '../secrets/vault.js';
 import { CliFlags, printError, printResult } from '../utils/cli-flags.js';
 
@@ -115,8 +117,44 @@ export async function secretCommand(flags: CliFlags): Promise<number> {
     return 0;
   }
 
+  if (action === 'audit') {
+    return runAudit(flags, vaultRoot);
+  }
+
   printError(flags, `agentfs secret: unknown action '${action}'`, 'UNKNOWN_ACTION');
   return 1;
+}
+
+async function runAudit(flags: CliFlags, vaultRoot: string): Promise<number> {
+  const result = await auditVault(vaultRoot);
+  const sep = '═'.repeat(50);
+
+  const keyStatus = result.hasKeyFile ? 'present' : 'MISSING';
+  const refsOk = result.missingEntries.length === 0;
+  const orphansOk = result.orphanedEntries.length === 0;
+
+  let human = `\nSecret Vault Audit\n${sep}\n`;
+  human += `  Vault: .agentos/secrets/vault.yaml\n`;
+  human += `  Secrets: ${result.count} stored\n`;
+  human += `  Encryption: ${result.encryption}\n`;
+  human += `  Key file: .agentos/secrets/.vault-key (${keyStatus})\n`;
+  human += `\n  Refs integrity:\n`;
+
+  if (refsOk && orphansOk) {
+    human += `    ✓ All ${result.refsCount} refs have corresponding vault entries\n`;
+  } else {
+    if (!refsOk) {
+      human += `    ✗ Missing vault entries for: ${result.missingEntries.join(', ')}\n`;
+    }
+    if (!orphansOk) {
+      human += `    ✗ Orphaned vault entries (no ref): ${result.orphanedEntries.join(', ')}\n`;
+    }
+  }
+
+  human += `${sep}\n`;
+
+  printResult(flags, human, result as unknown as Record<string, unknown>);
+  return 0;
 }
 
 function printSecretUsage(): void {
@@ -126,5 +164,6 @@ function printSecretUsage(): void {
   process.stdout.write('  remove <name>         Remove a secret\n');
   process.stdout.write('  list                  List secret names (not values)\n');
   process.stdout.write('  rotate <name> <val>   Rotate (re-encrypt) a secret\n');
-  process.stdout.write('  get <name>            Get the plaintext value of a secret\n\n');
+  process.stdout.write('  get <name>            Get the plaintext value of a secret\n');
+  process.stdout.write('  audit                 Audit vault integrity and encryption status\n\n');
 }
