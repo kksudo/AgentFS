@@ -1,6 +1,6 @@
 {
   "name": "create-agentfs",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Scaffold your Obsidian vault as a filesystem-based OS for AI agents",
   "type": "module",
   "main": "dist/cli.js",
