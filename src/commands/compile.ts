@@ -453,7 +453,7 @@ export async function compileCommand(flags: CliFlags): Promise<number> {
     // -----------------------------------------------------------------------
 
     const osReleaseOutput = await updateOsRelease(vaultRoot, COMPILE_VERSION, dryRun);
-    await writeOutputs([osReleaseOutput], vaultRoot, dryRun);
+    await writeOutputs(filterCached([osReleaseOutput]), vaultRoot, dryRun);
 
     // -----------------------------------------------------------------------
     // Persist updated cache (skip on dry-run).

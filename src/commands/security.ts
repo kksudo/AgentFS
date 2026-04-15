@@ -224,11 +224,9 @@ export async function securityCommand(flags: CliFlags): Promise<number> {
       // no modules dir — empty list
     }
 
-    // Load built-in definitions for active modules and merge
-    const builtinDefs = activeModules
-      .filter((m) => isBuiltinModule(m))
-      .map((m) => BUILTIN_MODULES[m]);
-    const effective = mergeModules(policy, builtinDefs);
+    // `policy` is already the result of prior `security add` merges — use it directly.
+    // Re-merging built-in defs would double-count rules already present in policy.yaml.
+    const effective = policy;
 
     // Compliance checks
     const hasWeb = activeModules.includes('web');

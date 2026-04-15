@@ -61,6 +61,11 @@ async function getOrCreateKey(vaultRoot: string): Promise<Buffer> {
     await fs.writeFile(keyPath, key.toString('hex'), 'utf8');
     // Restrict permissions (best-effort on non-Windows)
     try { await fs.chmod(keyPath, 0o600); } catch { /* ignore on Windows */ }
+    // Protect entire secrets dir from accidental git commit
+    const gitignorePath = path.join(vaultRoot, SECRETS_DIR, '.gitignore');
+    try { await fs.access(gitignorePath); } catch {
+      await fs.writeFile(gitignorePath, '*\n', 'utf8');
+    }
     return key;
   }
 }
@@ -76,12 +81,19 @@ function encrypt(value: string, key: Buffer): string {
 function decrypt(encoded: string, key: Buffer): string {
   const inner = encoded.slice(AES_PREFIX.length, -AES_SUFFIX.length);
   const [ivHex, authTagHex, ciphertextHex] = inner.split(':');
-  const iv = Buffer.from(ivHex, 'hex');
-  const authTag = Buffer.from(authTagHex, 'hex');
-  const ciphertext = Buffer.from(ciphertextHex, 'hex');
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv) as crypto.DecipherGCM;
-  decipher.setAuthTag(authTag);
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+  if (!ivHex || !authTagHex || !ciphertextHex) {
+    throw new Error('malformed vault ciphertext: expected iv:tag:ciphertext');
+  }
+  try {
+    const iv = Buffer.from(ivHex, 'hex');
+    const authTag = Buffer.from(authTagHex, 'hex');
+    const ciphertext = Buffer.from(ciphertextHex, 'hex');
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv) as crypto.DecipherGCM;
+    decipher.setAuthTag(authTag);
+    return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+  } catch (err) {
+    throw new Error(`Failed to decrypt vault entry: ${err instanceof Error ? err.message : String(err)}`);
+  }
 }
 
 function isAesEncrypted(value: string): boolean {

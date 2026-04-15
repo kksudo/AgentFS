@@ -38,6 +38,8 @@ export interface CompileOutput {
   content: string;
   /** Whether this file is owned by AgentFS (true) or user (false) */
   managed: boolean;
+  /** Set by the cache filter when content hash matches — output skipped on this run. */
+  skipped?: boolean;
 }
 
 /** Result of a compile operation. */
